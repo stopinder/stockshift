@@ -186,3 +186,24 @@ integration, including the 100-outcome fixture and abandoned-lease recovery. It
 requires the installed `services/worker/.venv`. Test fixtures are synthetic and
 remain locally until reset. Python unit tests use a fake gateway, while final
 database verification uses Docker-backed Supabase, never PGlite.
+
+## XLSX ingestion (Increment 6)
+
+`domain.xlsx.parse_xlsx` reads bounded ordinary OOXML archives directly using
+`zipfile`/`defusedxml==0.7.1`; prices are parsed from stored XML tokens with Decimal.
+It calls the same `normalize_rows` as CSV, then the same reconciliation/publication
+pipeline. `format: "xlsx"`, `worksheet` and integer `header_row` extend the existing
+options dictionary; explicit `columns` can map currency/pack/unit as well as SKU,
+cost and description. `inspect_workbook` returns worksheet metadata and an optional
+bounded header/sample preview. It never recalculates formulas.
+
+The server's local stdin adapter uses the installed worker environment for upload
+verification and discovery. The polling worker independently revalidates bytes, SHA,
+format, tenant and configuration before parsing and atomically publishing output.
+Worksheet and row participate in deterministic record/evidence IDs. Provenance
+includes original XML raw text, selected worksheet, physical row and header.
+
+See [workbook assumptions and local mapping](../../docs/LOCAL_CSV_WORKFLOW.md#xlsx-workbooks)
+for limits, formulas, identifier padding and actionable failure behavior. The public
+CSV APIs and their monetary semantics remain unchanged. `openpyxl` is pinned only
+in the development group to write realistic OOXML test fixtures, not used at runtime.

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import {
   api,
-  csvOptions,
+  importOptions,
   defaultSettings,
   friendlyError,
   outcomeLabels,
@@ -10,6 +10,7 @@ import {
 } from "../workflow";
 import type { Client, ResultRow } from "../workflow";
 import CsvSettings from "./CsvSettings.vue";
+import XlsxSettings from "./XlsxSettings.vue";
 const props = defineProps<{
   client: Client;
   tenantId: string;
@@ -156,6 +157,26 @@ async function load(initial = false) {
         (links.data ?? []).map((l) => [l.side, l.source_files]),
       ) as typeof files.value;
     }
+    if (initial && !run.value) {
+      for (const [side, settings] of [
+        ["current", currentSettings],
+        ["incoming", incomingSettings],
+      ] as const) {
+        if (/\.xlsx$/i.test(files.value[side]?.original_filename ?? "")) {
+          try {
+            Object.assign(
+              settings.value,
+              JSON.parse(
+                localStorage.getItem(`xlsx:${props.comparisonId}:${side}`) ??
+                  "{}",
+              ),
+            );
+          } catch {
+            /* fall back to explicit mapping */
+          }
+        }
+      }
+    }
     if (run.value) {
       const state = await props.client
         .from("jobs")
@@ -206,6 +227,20 @@ async function upload(side: string, event: Event) {
       side,
     });
     if (attached.error) throw attached.error;
+    if (/\.xlsx$/i.test(file.name)) {
+      const settings = side === "current" ? currentSettings : incomingSettings;
+      settings.value = {
+        ...defaultSettings(),
+        sku: "",
+        price: "",
+        description: "",
+        worksheet: "",
+        headerRow: 1,
+        currencyColumn: "",
+        packColumn: "",
+        unitColumn: "",
+      };
+    }
     await load();
   } catch (e) {
     error.value = friendlyError(e);
@@ -215,12 +250,63 @@ async function upload(side: string, event: Event) {
     input.value = "";
   }
 }
+watch(
+  [currentSettings, incomingSettings],
+  () => {
+    for (const [side, settings] of [
+      ["current", currentSettings],
+      ["incoming", incomingSettings],
+    ] as const) {
+      if (/\.xlsx$/i.test(files.value[side]?.original_filename ?? "")) {
+        try {
+          localStorage.setItem(
+            `xlsx:${props.comparisonId}:${side}`,
+            JSON.stringify(settings.value),
+          );
+        } catch {
+          /* storage optional */
+        }
+      }
+    }
+  },
+  { deep: true },
+);
 async function enqueue() {
   busy.value = true;
   error.value = "";
   try {
-    const a = csvOptions(currentSettings.value),
-      b = csvOptions(incomingSettings.value);
+    const a = importOptions(
+        currentSettings.value,
+        files.value.current!.original_filename,
+      ),
+      b = importOptions(
+        incomingSettings.value,
+        files.value.incoming!.original_filename,
+      );
+    for (const [side, settings] of [
+      ["current", currentSettings],
+      ["incoming", incomingSettings],
+    ] as const) {
+      if (/\.xlsx$/i.test(files.value[side]!.original_filename)) {
+        const preview = await (
+          await api(props.client, "/api/workbook", {
+            tenantId: props.tenantId,
+            fileId: files.value[side]!.id,
+            worksheet: settings.value.worksheet,
+            headerRow: settings.value.headerRow,
+          })
+        ).json();
+        const options = side === "current" ? a : b;
+        if (
+          !Object.values(options.columns).every((h) =>
+            preview.headers.includes(h),
+          )
+        )
+          throw new Error(
+            "Map every selected field to an available worksheet header.",
+          );
+      }
+    }
     const result = await props.client.rpc("enqueue_comparison_job", {
       p_tenant: props.tenantId,
       p_comparison: props.comparisonId,
@@ -381,7 +467,7 @@ onUnmounted(() => {
       class="panel upload-form"
       @submit.prevent="enqueue"
     >
-      <h2>Add your CSV files</h2>
+      <h2>Add your catalogue files</h2>
       <p class="muted">
         Files stay private. Upload and verification finish before background
         processing begins.
@@ -396,23 +482,39 @@ onUnmounted(() => {
           }}</span
           ><input
             :aria-label="
-              side === 'current' ? 'Current CSV file' : 'New CSV file'
+              side === 'current'
+                ? 'Current catalogue file'
+                : 'New catalogue file'
             "
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             :disabled="busy || !!files[side]"
             @change="upload(side, $event)"
           /><small role="status">{{
             files[side]
               ? "✓ Verified and ready"
-              : uploadState[side] || "UTF-8 CSV · up to 10 MiB"
+              : uploadState[side] || "CSV or XLSX · up to 10 MiB"
           }}</small></label
         >
       </div>
-      <CsvSettings
+      <XlsxSettings
+        v-if="files.current?.original_filename.toLowerCase().endsWith('.xlsx')"
         v-model="currentSettings"
+        :client="client"
+        :tenant-id="tenantId"
+        :file-id="files.current.id"
         side="current catalogue"
-      /><CsvSettings v-model="incomingSettings" side="new catalogue" />
+      />
+      <CsvSettings v-else v-model="currentSettings" side="current catalogue" />
+      <XlsxSettings
+        v-if="files.incoming?.original_filename.toLowerCase().endsWith('.xlsx')"
+        v-model="incomingSettings"
+        :client="client"
+        :tenant-id="tenantId"
+        :file-id="files.incoming.id"
+        side="new catalogue"
+      />
+      <CsvSettings v-else v-model="incomingSettings" side="new catalogue" />
       <div class="form-actions">
         <p class="hint">
           Your settings are saved with this comparison. You can leave while it
@@ -448,7 +550,7 @@ onUnmounted(() => {
         <p>
           {{
             run.status === "running"
-              ? "Your CSV files are being compared. Results will appear here once processing finishes."
+              ? "Your catalogue files are being compared. Results will appear here once processing finishes."
               : "Waiting for processing. This page updates automatically."
           }}
         </p>
@@ -462,9 +564,11 @@ onUnmounted(() => {
       <h2>Comparison could not finish</h2>
       <p>
         {{
-          job?.failure_reason?.code === "invalid_csv_job"
-            ? "Check the CSV headers, delimiter and number settings. Create a new comparison with corrected inputs."
-            : "Processing failed. Ask your workspace administrator to check the processing service, then create a new comparison."
+          job?.failure_reason?.code === "invalid_xlsx_job"
+            ? job.failure_reason.message
+            : job?.failure_reason?.code === "invalid_csv_job"
+              ? "Check the CSV headers, delimiter and number settings. Create a new comparison with corrected inputs."
+              : "Processing failed. Ask your workspace administrator to check the processing service, then create a new comparison."
         }}
       </p>
       <p class="hint">
@@ -701,7 +805,7 @@ onUnmounted(() => {
             <thead>
               <tr>
                 <th>File</th>
-                <th>CSV row</th>
+                <th>Worksheet / row</th>
                 <th>Column</th>
                 <th>Source value</th>
               </tr>
@@ -718,7 +822,13 @@ onUnmounted(() => {
                       : (files.incoming?.original_filename ?? "Source file")
                   }}
                 </td>
-                <td class="number">{{ evidence.locator.row ?? "—" }}</td>
+                <td class="number">
+                  {{
+                    evidence.locator.sheet
+                      ? evidence.locator.sheet + " / "
+                      : ""
+                  }}{{ evidence.locator.row ?? "—" }}
+                </td>
                 <td>
                   {{
                     evidence.locator.column ??

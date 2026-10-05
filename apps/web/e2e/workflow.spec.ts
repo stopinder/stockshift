@@ -82,16 +82,16 @@ async function create(page: Page, title: string) {
   await page.getByLabel("Supplier name").fill("Northline Components");
   await page.getByRole("button", { name: "Continue to files" }).click();
   await expect(
-    page.getByRole("heading", { name: "Add your CSV files" }),
+    page.getByRole("heading", { name: "Add your catalogue files" }),
   ).toBeVisible();
   await noOverflow(page);
 }
 async function upload(page: Page, old: Buffer, next: Buffer) {
   await page
-    .getByLabel("Current CSV file")
+    .getByLabel("Current catalogue file")
     .setInputFiles({ name: "current.csv", mimeType: "text/csv", buffer: old });
   await expect(page.getByText("✓ Verified and ready")).toHaveCount(1);
-  await page.getByLabel("New CSV file").setInputFiles({
+  await page.getByLabel("New catalogue file").setInputFiles({
     name: "supplier.csv",
     mimeType: "text/csv",
     buffer: next,
@@ -318,7 +318,7 @@ test("upload verification failure can be retried and invalid settings are action
   page,
 }) => {
   await create(page, "Retry upload");
-  await page.getByLabel("Current CSV file").setInputFiles({
+  await page.getByLabel("Current catalogue file").setInputFiles({
     name: "invalid.csv",
     mimeType: "text/csv",
     buffer: Buffer.from("%PDF-1.7\n"),
@@ -351,5 +351,187 @@ test("unavailable tenant comparison and invalid session do not leak data", async
   await page.getByLabel("Password", { exact: true }).fill("incorrect-password");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByText(/Sign-in failed/)).toBeVisible();
+  await noOverflow(page);
+});
+
+function xlsxFixture(...args: string[]) {
+  return Buffer.from(
+    execFileSync(
+      resolve(
+        "services/worker/.venv",
+        process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
+      ),
+      ["services/worker/tests/workbook_fixture.py", ...args],
+      { env, encoding: "utf8" },
+    ).trim(),
+    "base64",
+  );
+}
+async function uploadWorkbook(
+  page: Page,
+  side: "Current" | "New",
+  ...args: string[]
+) {
+  await page.getByLabel(`${side} catalogue file`).setInputFiles({
+    name: side.toLowerCase() + ".xlsx",
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: xlsxFixture(...args),
+  });
+  await expect(page.getByText("✓ Verified and ready")).toHaveCount(
+    side === "Current" ? 1 : 2,
+  );
+}
+async function mapWorkbook(page: Page, index: number) {
+  const area = page.locator(".workbook-settings").nth(index);
+  await area.getByLabel("Worksheet", { exact: true }).selectOption("Products");
+  await area.getByLabel("Header row", { exact: true }).fill("2");
+  await area.getByRole("button", { name: "Refresh header preview" }).click();
+  await expect(
+    area.getByRole("columnheader", { name: "SKU", exact: true }),
+  ).toBeVisible();
+  await area.getByLabel("SKU header", { exact: true }).selectOption("SKU");
+  await area.getByLabel("Cost header", { exact: true }).selectOption("Price");
+  await area.getByLabel("Description header").selectOption("Description");
+  await area.getByLabel("Currency", { exact: true }).fill("GBP");
+  await area.getByLabel("Unit", { exact: true }).fill("each");
+  await area.getByLabel("Currency column").selectOption("Currency");
+  await area.getByLabel("Pack quantity column").selectOption("Pack");
+  await area.getByLabel("Unit column").selectOption("UOM");
+}
+test("XLSX upload → explicit worksheet/mapping → results/review/export survives re-entry", async ({
+  page,
+}, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await create(page, "XLSX precision comparison");
+  await uploadWorkbook(page, "Current");
+  await uploadWorkbook(page, "New", "incoming");
+  await mapWorkbook(page, 0);
+  await mapWorkbook(page, 1);
+  await page.screenshot({
+    path: `.tools/${info.project.name}-xlsx-mapping.png`,
+    fullPage: true,
+  });
+  await noOverflow(page);
+  await page.reload();
+  await expect(
+    page
+      .locator(".workbook-settings")
+      .first()
+      .getByLabel("Worksheet", { exact: true }),
+  ).toHaveValue("Products");
+  await expect(
+    page.locator(".workbook-settings").first().getByLabel("Header row"),
+  ).toHaveValue("2");
+  await expect(
+    page
+      .locator(".workbook-settings")
+      .first()
+      .getByRole("columnheader", { name: "SKU", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Start comparison" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Comparison queued" }),
+  ).toBeVisible();
+  await page.reload();
+  worker();
+  await expect(page.locator(".results-table tbody tr")).toHaveCount(4, {
+    timeout: 15000,
+  });
+  await expect(page.getByText("00123", { exact: true })).toBeVisible();
+  await expect(page.getByText("00042", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "↓ Export changed products" }),
+  ).toBeDisabled();
+  for (let i = 0; i < 2; i++) {
+    await page
+      .getByRole("button", { name: "Review", exact: true })
+      .first()
+      .click();
+    await page.locator("dialog summary").click();
+    await expect(page.locator(".evidence-table")).toBeVisible();
+    await expect(
+      page
+        .locator(".evidence-table")
+        .getByText(/Products \/ 5/)
+        .first(),
+    ).toBeVisible();
+    await page.screenshot({
+      path: `.tools/${info.project.name}-xlsx-review.png`,
+      fullPage: true,
+    });
+    await page
+      .getByLabel("Decision reason")
+      .fill("Blank supplier price; exclude pending a corrected workbook");
+    await page
+      .getByRole("button", { name: "Confirm no match · exclude" })
+      .click();
+    await expect(page.locator("dialog")).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Review", exact: true }),
+    ).toHaveCount(1 - i);
+  }
+  await page.reload();
+  await expect(
+    page.getByText("2 review item(s) explicitly excluded.", { exact: false }),
+  ).toBeVisible();
+  const event = page.waitForEvent("download");
+  await page.getByRole("button", { name: "↓ Export changed products" }).click();
+  const downloaded = await event;
+  const csv = readFileSync((await downloaded.path())!, "utf8");
+  expect(downloaded.suggestedFilename()).toBe("changed_products.csv");
+  expect(csv.split("\r\n").filter(Boolean)).toHaveLength(2);
+  expect(csv).toContain('"00123"');
+  expect(csv).toContain("0.001000000000000001");
+  await page.screenshot({
+    path: `.tools/${info.project.name}-xlsx-complete.png`,
+    fullPage: true,
+  });
+  await noOverflow(page);
+  expect(errors).toEqual([]);
+});
+test("XLSX corrupt upload retry, empty worksheet and formula failure are actionable", async ({
+  page,
+}, info) => {
+  await create(page, "XLSX input errors");
+  await page.getByLabel("Current catalogue file").setInputFiles({
+    name: "broken.xlsx",
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from("PK\x03\x04broken"),
+  });
+  await expect(page.getByText(/Corrupt or unsupported workbook/)).toBeVisible();
+  await uploadWorkbook(page, "Current");
+  await uploadWorkbook(page, "New", "incoming", "formula");
+  const area = page.locator(".workbook-settings").first();
+  await area.getByLabel("Worksheet", { exact: true }).selectOption("Empty");
+  await expect(area.getByText(/Selected worksheet is empty/)).toBeVisible();
+  await mapWorkbook(page, 0);
+  await mapWorkbook(page, 1);
+  await expect(
+    page
+      .locator(".workbook-settings")
+      .nth(1)
+      .getByText("[formula — replace with values]", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Start comparison" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Comparison queued" }),
+  ).toBeVisible();
+  worker();
+  await expect(
+    page.getByRole("heading", { name: "Comparison could not finish" }),
+  ).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText(/formula in mapped column/)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/formula in mapped column/)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "↓ Export changed products" }),
+  ).toBeDisabled();
+  await page.screenshot({
+    path: `.tools/${info.project.name}-xlsx-error.png`,
+    fullPage: true,
+  });
   await noOverflow(page);
 });

@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "StockShift worker foundation and versioned contract validation"
 requires-python = ">=3.11,<3.15"
 dependencies = [
+  "defusedxml==0.7.1",
   "jsonschema==4.26.0",
   "referencing==0.37.0",
   "rfc3339-validator==0.1.4",
@@ -17,7 +18,11 @@ dependencies = [
 stockshift-worker = "stockshift_worker.entrypoints.cli:main"
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "ruff==0.16.10"]
+dev = [
+    "openpyxl==3.1.5",
+    "pytest==9.1.1",
+    "ruff==0.16.10",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/stockshift_worker"]

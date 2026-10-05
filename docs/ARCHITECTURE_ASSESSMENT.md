@@ -363,3 +363,16 @@ Verified repository evidence and current official docs; no application tests can
 The Supabase changelog was checked. Recent notes concerning Postgres extension behavior and extension version pinning reinforce using tested CLI-generated migrations and explicit deployed-version checks; this design requires no optional database extensions. Review applicable notices again during implementation. [Postgres release notice](https://supabase.com/changelog/postgres-15-19-17-11-breaking-changes), [extension pinning notice](https://supabase.com/changelog/extension-version-pinning-ignored)
 
 Before the relevant increments, resolve: Notion sprint contents; real supplier/input examples and customer export schemas; currency/decimal/tax/UOM defaults and selling-price definition; file/page/concurrency budgets; retention period and data region; CPU/GPU host and dispatch guarantees. These do not block the proposed first scaffold commit. Never silently choose commercial data assumptions for a customer's files.
+
+## Increment 6 implementation (October 5, 2026)
+
+XLSX ingestion now joins the persisted local CSV workflow. A bounded direct OOXML
+reader preserves stored numeric decimal text, accepts explicit worksheet/header/
+column selection and normalizes through the shared CSV record builder. It rejects
+mapped formulas/dates/ambiguous numeric identifiers and unsupported workbook layouts.
+The browser requests authenticated local Python inspection for worksheet/header/sample
+metadata, then enqueues the existing fenced reconciliation job. Stored records,
+review exclusions, tenant policies and changed-products CSV export retain the same
+contracts. A migration broadens verified source MIME/extension constraints and the
+private storage allowlist, and extends tenant-validated enqueue/load gates.
+No hosted worker, XLSX export or further matching capabilities are added.

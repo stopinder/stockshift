@@ -43,7 +43,7 @@ export interface SourceEvidence {
   source_file_id: string;
   field_name: string;
   raw_text: string;
-  locator: { row: number | null; column: string | null };
+  locator: { row: number | null; column: string | null; sheet?: string | null };
 }
 export interface ResultRow {
   id: string;
@@ -85,6 +85,11 @@ export function friendlyError(error: unknown): string {
     : "The service is unavailable. Check the local stack and try again.";
 }
 export interface CsvSettings {
+  worksheet?: string;
+  headerRow?: number;
+  currencyColumn?: string;
+  packColumn?: string;
+  unitColumn?: string;
   sku: string;
   price: string;
   description: string;
@@ -114,7 +119,7 @@ export function defaultSettings(): CsvSettings {
     symbol: "",
   };
 }
-export function csvOptions(s: CsvSettings) {
+export function csvOptions(s: CsvSettings, mappedFields: string[] = []) {
   if (
     !s.sku.trim() ||
     !s.price.trim() ||
@@ -125,10 +130,11 @@ export function csvOptions(s: CsvSettings) {
       "Use distinct, exact CSV column headers for SKU, cost and description.",
     );
   if (
-    !/^[A-Z]{3}$/.test(s.currency) ||
-    !s.unit.trim() ||
-    !/^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(s.pack) ||
-    /^0(?:\.0+)?$/.test(s.pack)
+    (!mappedFields.includes("currency") && !/^[A-Z]{3}$/.test(s.currency)) ||
+    (!mappedFields.includes("unit") && !s.unit.trim()) ||
+    (!mappedFields.includes("pack_quantity") &&
+      (!/^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(s.pack) ||
+        /^0(?:\.0+)?$/.test(s.pack)))
   )
     throw new Error(
       "Set a three-letter currency, unit and positive pack quantity for each file.",
@@ -157,12 +163,44 @@ export function csvOptions(s: CsvSettings) {
       cost_price: s.price,
       ...(s.description ? { description: s.description } : {}),
     },
-    currency: s.currency,
-    unit: s.unit,
-    pack_quantity: s.pack,
+    currency: mappedFields.includes("currency") ? null : s.currency,
+    unit: mappedFields.includes("unit") ? null : s.unit,
+    pack_quantity: mappedFields.includes("pack_quantity") ? null : s.pack,
     price_basis: s.priceBasis,
     tax_basis: s.taxBasis,
     currency_symbol: s.symbol || null,
+  };
+}
+export function importOptions(s: CsvSettings, filename: string) {
+  if (!/\.xlsx$/i.test(filename)) return csvOptions(s);
+  const options = csvOptions(s, [
+    ...(s.currencyColumn ? ["currency"] : []),
+    ...(s.packColumn ? ["pack_quantity"] : []),
+    ...(s.unitColumn ? ["unit"] : []),
+  ]);
+  if (
+    !s.worksheet ||
+    !Number.isInteger(s.headerRow) ||
+    s.headerRow! < 1 ||
+    s.headerRow! > 200
+  )
+    throw new Error(
+      "Choose a worksheet and header row from 1 to 200 for each workbook.",
+    );
+  const columns = {
+    ...options.columns,
+    ...(s.currencyColumn ? { currency: s.currencyColumn } : {}),
+    ...(s.packColumn ? { pack_quantity: s.packColumn } : {}),
+    ...(s.unitColumn ? { unit: s.unitColumn } : {}),
+  };
+  if (new Set(Object.values(columns)).size !== Object.keys(columns).length)
+    throw new Error("Map each field to a different worksheet column.");
+  return {
+    ...options,
+    columns,
+    format: "xlsx",
+    worksheet: s.worksheet,
+    header_row: s.headerRow,
   };
 }
 export async function api(
@@ -193,8 +231,12 @@ export async function uploadCsv(
   file: File,
   progress: (state: string) => void,
 ): Promise<string> {
-  if (!/\.csv$/i.test(file.name) || file.size < 1 || file.size > 10485760)
-    throw new Error("Choose a UTF-8 CSV file between 1 byte and 10 MiB.");
+  if (
+    !/\.(csv|xlsx)$/i.test(file.name) ||
+    file.size < 1 ||
+    file.size > 10485760
+  )
+    throw new Error("Choose a CSV or XLSX file between 1 byte and 10 MiB.");
   progress("Registering upload…");
   const intent = await (
     await api(client, "/api/uploads", {
@@ -209,7 +251,9 @@ export async function uploadCsv(
   const { error } = await client.storage
     .from("catalogue-uploads")
     .uploadToSignedUrl(intent.path, intent.token, file, {
-      contentType: "text/csv",
+      contentType: /\.xlsx$/i.test(file.name)
+        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        : "text/csv",
     });
   if (error)
     throw new Error(

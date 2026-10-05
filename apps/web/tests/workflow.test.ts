@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   csvOptions,
+  importOptions,
   defaultSettings,
   friendlyError,
   validateBrowserConfig,
@@ -11,6 +12,74 @@ const settings = () => ({
   ...defaultSettings(),
   currency: "GBP",
   unit: "each",
+});
+test("CSV options remain unchanged through structured import routing", () => {
+  assert.deepEqual(
+    importOptions(settings(), "old.csv"),
+    csvOptions(settings()),
+  );
+});
+test("XLSX settings require explicit sheet and header row", () => {
+  assert.throws(() => importOptions(settings(), "book.xlsx"), /worksheet/);
+  assert.throws(
+    () =>
+      importOptions(
+        { ...settings(), worksheet: "Products", headerRow: 201 },
+        "book.xlsx",
+      ),
+    /header/,
+  );
+});
+test("mapped XLSX commercial fields require no invented file-wide defaults", () => {
+  const options = importOptions(
+    {
+      ...defaultSettings(),
+      worksheet: "Products",
+      headerRow: 2,
+      currencyColumn: "Currency",
+      unitColumn: "UOM",
+      packColumn: "Pack",
+    },
+    "a.xlsx",
+  );
+  assert.equal(options.currency, null);
+  assert.equal(options.unit, null);
+  assert.equal(options.pack_quantity, null);
+});
+test("XLSX optional fields use explicit distinct column mappings", () => {
+  const options = importOptions(
+    {
+      ...settings(),
+      worksheet: "Products",
+      headerRow: 2,
+      currencyColumn: "Currency",
+      packColumn: "Pack",
+      unitColumn: "UOM",
+    },
+    "book.xlsx",
+  );
+  assert.equal((options as { format: string }).format, "xlsx");
+  assert.deepEqual(options.columns, {
+    supplier_sku: "SKU",
+    cost_price: "Price",
+    description: "Description",
+    currency: "Currency",
+    pack_quantity: "Pack",
+    unit: "UOM",
+  });
+  assert.throws(
+    () =>
+      importOptions(
+        {
+          ...settings(),
+          worksheet: "Products",
+          headerRow: 2,
+          currencyColumn: "SKU",
+        },
+        "book.xlsx",
+      ),
+    /different/,
+  );
 });
 test("explicit CSV settings retain header strings and canonical defaults", () => {
   const options = csvOptions(settings());

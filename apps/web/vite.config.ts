@@ -3,6 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import uploads from "./api/uploads.ts";
 import exportHandler from "./server/export.ts";
+import workbookHandler from "./api/workbook.ts";
 
 export default defineConfig({
   plugins: [
@@ -17,7 +18,7 @@ export default defineConfig({
             await exportHandler(req, res);
             return;
           }
-          if (path !== "/api/uploads") {
+          if (path !== "/api/uploads" && path !== "/api/workbook") {
             next();
             return;
           }
@@ -32,7 +33,10 @@ export default defineConfig({
               }
             }
             Object.assign(req, { body: body ? JSON.parse(body) : null });
-            await uploads(req, res);
+            await (path === "/api/workbook" ? workbookHandler : uploads)(
+              req,
+              res,
+            );
           } catch {
             res.statusCode = 400;
             res.end('{"error":"Invalid JSON request"}');

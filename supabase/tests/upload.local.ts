@@ -11,6 +11,8 @@ import { SupabaseUploadGateway } from '../../apps/web/server/supabase-upload-gat
 import { createUploadIntent, finalizeUpload } from '../../apps/web/server/uploads'
 import { createServer } from 'node:http'
 import exportHandler from '../../apps/web/server/export'
+import workbookHandler from '../../apps/web/api/workbook'
+import { XLSX_MIME } from '../../apps/web/server/workbook'
 
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
   !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_)/i.test(key)))
@@ -74,7 +76,7 @@ test('real bucket is private with a 10 MiB limit and CSV MIME allowlist', async 
   assert.ifError(error)
   assert.equal(data!.public, false)
   assert.equal(Number(data!.file_size_limit), 10485760)
-  assert.deepEqual(data!.allowed_mime_types, ['text/csv','application/octet-stream','application/vnd.ms-excel'])
+  assert.deepEqual(data!.allowed_mime_types, ['text/csv','application/octet-stream','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
 })
 test('real Auth and signed upload finalize with verified bytes, MIME, SHA and idempotency', async () => {
   const file = await uploaded()
@@ -296,4 +298,113 @@ test('real HTTP export rejects failed and queued runs',async()=>{
 test('real HTTP export rejects unsupported methods and malformed selection',async()=>{
   assert.equal((await fetch(`${exportUrl}/api/export`,{method:'POST'})).status,405)
   assert.equal((await fetch(`${exportUrl}/api/export?tenant=invalid&run=invalid`,{headers:{Authorization:`Bearer ${users.editor!.token}`}})).status,400)
+})
+
+// XLSX exercises the same real Auth, immutable Storage, tenant RLS, Python job and CSV export paths.
+function xlsxBytes(...args: string[]) {
+  return Buffer.from(execFileSync(resolve('services/worker/.venv',process.platform==='win32'?'Scripts/python.exe':'bin/python'),
+    ['services/worker/tests/workbook_fixture.py',...args],{env,encoding:'utf8'}).trim(),'base64')
+}
+async function uploadedXlsx(data=xlsxBytes()) {
+  const file=await createUploadIntent(gateway,users.editor!.token,{tenantId:A,filename:'catalogue.xlsx',byteCount:data.length})
+  assert.ifError((await users.editor!.client.storage.from(bucket).uploadToSignedUrl(file.path,file.token,data,{contentType:XLSX_MIME})).error)
+  await finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:file.fileId})
+  return file
+}
+const xlsxOptions={...csvOptions,format:'xlsx',worksheet:'Products',header_row:2,
+  columns:{supplier_sku:'SKU',cost_price:'Price',description:'Description',currency:'Currency',pack_quantity:'Pack',unit:'UOM'}}
+async function xlsxComparison(formula=false) {
+  const files=[await uploadedXlsx(),await uploadedXlsx(xlsxBytes('incoming',...(formula?['formula']:[])))]
+  const comp=await users.editor!.client.from('comparisons').insert({tenant_id:A,title:'XLSX persisted comparison'}).select().single()
+  assert.ifError(comp.error)
+  for(let i=0;i<2;i++) assert.ifError((await users.editor!.client.from('comparison_files').insert({tenant_id:A,
+    comparison_id:comp.data.id,source_file_id:files[i]!.fileId,side:i===0?'current':'incoming'})).error)
+  return {comparison:comp.data.id,files}
+}
+async function previewRequest(fileId:string,role='editor',extra:Record<string,unknown>={}) {
+  const res={statusCode:0,output:'',setHeader(){},end(value:string){this.output=value}}
+  await workbookHandler({method:'POST',headers:{authorization:`Bearer ${users[role]!.token}`},body:{tenantId:A,fileId,...extra}} as Parameters<typeof workbookHandler>[0],res as unknown as Parameters<typeof workbookHandler>[1])
+  return {status:res.statusCode,body:JSON.parse(res.output)}
+}
+test('real XLSX upload finalizes with authoritative MIME and discovery',async()=>{
+  const file=await uploadedXlsx()
+  const ready=await finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:file.fileId})
+  assert.equal(ready.mime,XLSX_MIME)
+  const preview=await previewRequest(file.fileId)
+  assert.equal(preview.status,200)
+  assert.deepEqual(preview.body.worksheets.map((s:{name:string})=>s.name),['Notes','Products','Hidden','Empty'])
+  assert.equal(preview.body.headers,undefined)
+})
+test('XLSX preview validates tenant access, hidden/empty worksheets and explicit header selection',async()=>{
+  const file=await uploadedXlsx()
+  const preview=await previewRequest(file.fileId,'viewer',{worksheet:'Products',headerRow:2})
+  assert.equal(preview.status,200);assert.equal(preview.body.samples[0][0],'00123')
+  assert.equal((await previewRequest(file.fileId,'other')).status,403)
+  for(const worksheet of ['Hidden','Empty','Missing']) assert.equal((await previewRequest(file.fileId,'editor',{worksheet,headerRow:2})).status,422)
+  assert.equal((await previewRequest(file.fileId,'editor',{worksheet:'Products',headerRow:0})).status,400)
+})
+test('XLSX enqueue requires worksheet/format and disallows browser worker mutation',async()=>{
+  const c=await xlsxComparison()
+  for(const options of [csvOptions,{...xlsxOptions,worksheet:''},{...xlsxOptions,header_row:0}]) {
+    const r=await users.editor!.client.rpc('enqueue_comparison_job',{p_tenant:A,p_comparison:c.comparison,p_key:randomUUID(),p_current_options:options,p_incoming_options:options})
+    assert.equal(r.error?.code,'23514')
+  }
+  assert.ok((await users.editor!.client.rpc('claim_csv_job',{p_worker:randomUUID()})).error)
+})
+test('XLSX durable job persists precision, leading zeros, worksheet provenance, review and unchanged CSV export',async()=>{
+  const c=await xlsxComparison()
+  const queued=await users.editor!.client.rpc('enqueue_comparison_job',{p_tenant:A,p_comparison:c.comparison,p_key:randomUUID(),p_current_options:xlsxOptions,p_incoming_options:xlsxOptions})
+  assert.ifError(queued.error)
+  executeWorker()
+  const job=queued.data
+  assert.equal((await db.query('select status from public.jobs where id=$1',[job.id])).rows[0].status,'succeeded')
+  const results=await users.editor!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id})
+  assert.ifError(results.error);assert.equal(results.data.length,4)
+  const changed=results.data.find((r:{primary_outcome:string})=>r.primary_outcome==='changed')
+  assert.equal(changed.new_values.supplier_sku,'00123')
+  assert.equal(changed.cost_delta_text,'0.001000000000000001')
+  assert.ok(changed.provenance.every((e:{locator:{sheet:string;row:number}})=>e.locator.sheet==='Products'&&e.locator.row===3))
+  assert.equal(results.data.find((r:{primary_outcome:string})=>r.primary_outcome==='unchanged').new_values.supplier_sku,'00042')
+  assert.equal((await exportRequest(job.comparison_run_id)).status,409)
+  for(const r of results.data.filter((r:{review_state:string})=>r.review_state==='pending')) assert.ifError((await users.editor!.client.rpc('resolve_csv_review',{p_tenant:A,p_run:job.comparison_run_id,p_result:r.id,p_decision:'no_match',p_note:'Missing workbook price; exclude'})).error)
+  const exported=await exportRequest(job.comparison_run_id)
+  assert.equal(exported.status,200);assert.match(await exported.text(),/0\.001000000000000001/)
+  const other=await users.other!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id})
+  assert.ifError(other.error);assert.equal(other.data.length,0)
+  executeWorker()
+  assert.equal((await db.query('select count(*)::int n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,4)
+})
+test('XLSX formula job stores actionable terminal failure and never publishes partial results',async()=>{
+  const c=await xlsxComparison(true)
+  const queued=await users.editor!.client.rpc('enqueue_comparison_job',{p_tenant:A,p_comparison:c.comparison,p_key:randomUUID(),p_current_options:xlsxOptions,p_incoming_options:xlsxOptions})
+  assert.ifError(queued.error);executeWorker()
+  const job=(await db.query('select status,failure_reason from public.jobs where id=$1',[queued.data.id])).rows[0]
+  assert.equal(job.status,'failed');assert.equal(job.failure_reason.code,'invalid_xlsx_job');assert.match(job.failure_reason.message,/formula/)
+  assert.equal((await db.query('select count(*)::int n from public.comparison_results where comparison_run_id=$1',[queued.data.comparison_run_id])).rows[0].n,0)
+})
+test('corrupt and password protected XLSX never finalize as ready',async()=>{
+  for(const data of [Buffer.from('PK\x03\x04corrupt'),Buffer.from('d0cf11e0a1b11ae1','hex')]) {
+    const file=await createUploadIntent(gateway,users.editor!.token,{tenantId:A,filename:'invalid.xlsx',byteCount:data.length})
+    assert.ifError((await users.editor!.client.storage.from(bucket).uploadToSignedUrl(file.path,file.token,data,{contentType:XLSX_MIME})).error)
+    await assert.rejects(finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:file.fileId}),{status:422})
+    assert.equal((await db.query('select status from public.source_files where id=$1',[file.fileId])).rows[0].status,'failed')
+  }
+})
+
+test('mixed CSV and XLSX inputs share durable results and record contracts',async()=>{
+  const first=Buffer.from('SKU,Price,Description\n00123,1.001000000000000000,Precision component\n')
+  const a=await createUploadIntent(gateway,users.editor!.token,{tenantId:A,filename:'current.csv',byteCount:first.length})
+  assert.ifError((await users.editor!.client.storage.from(bucket).uploadToSignedUrl(a.path,a.token,first,{contentType:'text/csv'})).error)
+  await finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:a.fileId})
+  const b=await uploadedXlsx(xlsxBytes('incoming'))
+  const comp=await users.editor!.client.from('comparisons').insert({tenant_id:A,title:'Mixed format'}).select().single()
+  assert.ifError(comp.error)
+  for(const [side,file] of [['current',a],['incoming',b]] as const) assert.ifError((await users.editor!.client.from('comparison_files').insert({tenant_id:A,comparison_id:comp.data.id,source_file_id:file.fileId,side})).error)
+  const queued=await users.editor!.client.rpc('enqueue_comparison_job',{p_tenant:A,p_comparison:comp.data.id,p_key:randomUUID(),p_current_options:csvOptions,p_incoming_options:xlsxOptions})
+  assert.ifError(queued.error);executeWorker()
+  const rows=(await db.query('select primary_outcome,cost_delta_text,provenance from public.comparison_results where comparison_run_id=$1',[queued.data.comparison_run_id])).rows
+  const changed=rows.find(r=>r.primary_outcome==='changed')
+  assert.equal(changed.cost_delta_text,'0.001000000000000001')
+  assert.ok(changed.provenance.some((e:{locator:{sheet:null}})=>e.locator.sheet===null))
+  assert.ok(changed.provenance.some((e:{locator:{sheet:string}})=>e.locator.sheet==='Products'))
 })

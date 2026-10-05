@@ -7,6 +7,7 @@ from threading import Event, Thread
 from uuid import UUID, uuid5
 
 from stockshift_worker.domain.csv_engine import CsvOptions, parse_csv, reconcile
+from stockshift_worker.domain.xlsx import MIME, WorkbookError, parse_xlsx
 from stockshift_worker.jobs.gateway import LeaseLost, TransportError
 
 
@@ -49,16 +50,23 @@ def verified_catalogue(gateway, file, tenant, options):
     if (
         file["tenant_id"] != tenant
         or file["status"] != "ready"
-        or file["verified_mime"] != "text/csv"
+        or file["verified_mime"] not in ("text/csv", MIME)
         or not 1 <= file["byte_count"] <= 10485760
     ):
-        raise ValueError("Ready same-tenant CSV required")
-    settings = CsvOptions(**options)
-    if settings.encoding not in ("utf-8", "utf-8-sig"):
-        raise ValueError("Uploaded CSV must use UTF-8")
+        raise ValueError("Ready same-tenant structured file required")
     data = gateway.download(file)
     if len(data) != file["byte_count"] or sha256(data).hexdigest() != file["sha256"]:
         raise ValueError("Registered file integrity verification failed")
+    if file["verified_mime"] == MIME:
+        return parse_xlsx(
+            data, source_file_id=file["id"], source_name=file["original_filename"], options=options
+        )
+    settings_data = dict(options)
+    if settings_data.pop("format", "csv") != "csv":
+        raise ValueError("CSV settings required for CSV file")
+    settings = CsvOptions(**settings_data)
+    if settings.encoding not in ("utf-8", "utf-8-sig"):
+        raise ValueError("Uploaded CSV must use UTF-8")
     return parse_csv(
         data, source_file_id=file["id"], source_name=file["original_filename"], options=settings
     )
@@ -128,10 +136,16 @@ def run_once(gateway, worker_id):
     except Exception as exc:
         retryable = not isinstance(exc, (ValueError, TypeError, LookupError, csv.Error))
         failure = {
-            "code": "transport_unavailable" if retryable else "invalid_csv_job",
+            "code": "transport_unavailable"
+            if retryable
+            else "invalid_xlsx_job"
+            if isinstance(exc, WorkbookError)
+            else "invalid_csv_job",
             "stage": stage,
             "message": "Local transport unavailable"
             if retryable
+            else str(exc)
+            if isinstance(exc, WorkbookError)
             else "CSV settings, input integrity or result validation failed",
             "retryable": retryable,
         }

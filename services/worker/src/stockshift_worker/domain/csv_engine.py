@@ -143,19 +143,31 @@ def parse_csv(
         raise ValueError("CSV headers must be nonblank and unique")
     if not set(options.columns.values()) <= set(headers):
         raise ValueError("mapped header is absent from CSV; check delimiter and header mapping")
+
+    def rows():
+        while True:
+            row_number = reader.line_num + 1
+            try:
+                cells = next(reader)
+            except StopIteration:
+                break
+            if not cells:
+                continue
+            if len(cells) != len(headers):
+                raise ValueError(f"CSV row starting at line {row_number} has wrong column count")
+            yield row_number, cells
+
+    return normalize_rows(source_file_id, source_name, options, headers, rows())
+
+
+def normalize_rows(source_file_id, source_name, options, headers, rows, *, sheet=None):
+    """Shared CSV/XLSX normalization; syntax readers supply explicit row locators."""
+    namespace = UUID(source_file_id)
     indexes = {field: headers.index(header) for field, header in options.columns.items()}
     products, evidence = [], []
-    while True:
-        row_number = reader.line_num + 1
-        try:
-            cells = next(reader)
-        except StopIteration:
-            break
-        if not cells:
-            continue
-        if len(cells) != len(headers):
-            raise ValueError(f"CSV row starting at line {row_number} has wrong column count")
-        record_id = str(uuid5(namespace, f"row:{row_number}"))
+    prefix = f"sheet:{sheet}:" if sheet is not None else ""
+    for row_number, cells in rows:
+        record_id = str(uuid5(namespace, f"{prefix}row:{row_number}"))
         product = dict.fromkeys(FIELDS)
         product.update(
             schema_version="v1",
@@ -169,7 +181,7 @@ def parse_csv(
             product[field] = getattr(options, field)
         for field, index in indexes.items():
             raw = cells[index]
-            evidence_id = str(uuid5(namespace, f"row:{row_number}:column:{index}"))
+            evidence_id = str(uuid5(namespace, f"{prefix}row:{row_number}:column:{index}"))
             locator = dict.fromkeys(
                 (
                     "page",
@@ -182,7 +194,7 @@ def parse_csv(
                     "coordinate_system",
                 )
             )
-            locator.update(row=row_number, column=headers[index])
+            locator.update(row=row_number, column=headers[index], sheet=sheet)
             item = {
                 "schema_version": "v1",
                 "evidence_id": evidence_id,

@@ -168,3 +168,16 @@ Official references used: [RLS and grants](https://supabase.com/docs/guides/data
 [private Storage authorization](https://supabase.com/docs/guides/storage/security/access-control),
 [signed uploads](https://supabase.com/docs/reference/javascript/storage-from-createsigneduploadurl),
 [server user validation](https://supabase.com/docs/reference/javascript/auth-getuser).
+
+## XLSX extension
+
+Migration `20261005184752_xlsx_ingestion.sql` permits verified ordinary XLSX MIME
+paired with a `.xlsx` filename, alongside unchanged CSV validation. Storage remains
+private with the same 10 MiB cap and immutable object policies. Enqueue/load accept
+both structured formats; XLSX enqueue requires explicit format/worksheet/header
+settings. All existing tenant references, RLS, role gates, lease tokens and atomic
+completion semantics remain in effect. No new tables or browser mutation grants.
+Real local integration tests cover XLSX signed uploads, authenticated discovery,
+tenant denial, precise persisted results/provenance, review/export and terminal
+formula errors without partial publication. The historic `*_csv_job` RPC names
+remain stable for compatibility and now transport normalized CSV/XLSX jobs.

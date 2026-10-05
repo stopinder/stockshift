@@ -30,14 +30,14 @@ The application should accept current/internal catalogues and new supplier files
 
 ## Current status
 
-The local browser CSV workflow is implemented: authenticated workspace, supplier and
+The local browser CSV/XLSX workflow is implemented: authenticated workspace, supplier and
 comparison creation, private uploads, background processing, persistent results,
 review exclusions and changed-products export. The Python CLI polls durable jobs;
 the browser never performs matching or decimal arithmetic. Unsupported review matches
 cannot be approved: owners/editors explicitly reject or confirm no-match to exclude
 them, with an immutable decision history. Export stays blocked until review is complete.
 The existing private CSV MVP is not present. There are no connected hosted backends,
-billing, XLSX/PDF parsers, fuzzy matching or OCR models yet.
+billing, PDF parsers, fuzzy matching or OCR models yet.
 See [the complete local browser workflow](docs/LOCAL_CSV_WORKFLOW.md) for startup,
 sample files, import settings, review rules and browser verification.
 See [the local CSV engine guide](services/worker/README.md) for the callable API,
@@ -47,11 +47,11 @@ server upload lifecycle, local-only safety rules and real local stack checks.
 
 ## Workspace and ownership
 
-- `apps/web`: Vue 3 + Vite + TypeScript + Tailwind authenticated CSV workflow, built for Vercel.
+- `apps/web`: Vue 3 + Vite + TypeScript + Tailwind authenticated CSV/XLSX workflow, built for Vercel.
 - `packages/contracts`: canonical v1 JSON Schemas, generated TypeScript types and runtime validation.
-- `services/worker`: installable local CSV job worker, offline contract validation and `DocumentExtractor` protocol.
+- `services/worker`: installable local CSV/XLSX job worker, offline contract validation and `DocumentExtractor` protocol.
 - `tests/fixtures/contracts`: synthetic boundary fixtures shared by both language test suites.
-- `apps/web/server` and `api`: local-only authenticated upload intent/finalization and trusted CSV export.
+- `apps/web/server` and `api`: local-only authenticated upload intent/finalization, Python XLSX inspection and trusted CSV export.
 - `supabase`: local configuration, thirteen-table schema and native PostgreSQL RLS/job/review/security tests.
 - `.github/workflows/ci.yml`: locked installs, schema drift, typechecks, JS/database/Python tests, builds and CPU image smoke check.
 
@@ -163,11 +163,18 @@ The local Python engine and domain tests are implemented. The shared 100-outcome
 CSV corpus covers 50 unchanged, 15 increases, 10 decreases, 10 new, 8 absent,
 5 description-only changes and 2 review outcomes. Run `uv run --locked pytest`
 from `services/worker` to check both contract parity and domain behavior.
-The web shell continues to describe its own pending upload/comparison workflow.
+The authenticated browser workflow processes these fixtures through local persisted jobs.
 
 ## Current implementation increment
 
-`feat: add durable background jobs and result persistence`
+`feat: add XLSX ingestion to reconciliation pipeline`
+
+Direct bounded OOXML parsing preserves stored decimal text, explicit sheet/header/column
+mappings and worksheet/row/header/raw-value provenance. Both CSV and XLSX use the
+same normalization, deterministic engine, durable jobs, review and CSV export.
+See [XLSX assumptions and mapping](docs/LOCAL_CSV_WORKFLOW.md#xlsx-workbooks).
+
+Durable processing foundation:
 
 Jobs snapshot explicit CSV settings and ready comparison inputs. Workers claim
 leases, renew them, verify source bytes, reconcile, and atomically publish normalized
