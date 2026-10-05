@@ -77,7 +77,12 @@ export default async function handler(
       );
     const preview = await inspectPdf(bytes);
     res.statusCode = 200;
-    res.end(JSON.stringify(preview));
+    res.end(
+      JSON.stringify({
+        ...preview,
+        ocrModel: process.env.STOCKSHIFT_OCR_MODEL ?? "PaddleOCR-VL-1.6",
+      }),
+    );
   } catch (error) {
     res.statusCode = error instanceof UploadError ? error.status : 503;
     res.end(

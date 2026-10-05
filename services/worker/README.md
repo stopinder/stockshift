@@ -1,5 +1,11 @@
 # Local CSV engine
 
+Scanned/mixed PDF extraction uses `RoutedPdfExtractor` and the worker-only
+PaddleOCR-VL `/layout-parsing` adapter. It renders only pages that need OCR, caches
+immutable page responses, and requires source verification through the existing
+correction model. See [OCR configuration and local testing](../../docs/PADDLEOCR_WORKFLOW.md).
+The CPU image contains the adapter and PDF renderer, not GPU model weights.
+
 `stockshift_worker.domain.csv_engine` provides `CsvOptions`, `parse_csv`,
 `reconcile`, and `export_changed`. No cloud credentials or new dependencies are
 needed. The worker CLI processes durable local jobs when invoked with `--once`

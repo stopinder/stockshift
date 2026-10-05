@@ -55,6 +55,8 @@ jobs:
           uv pip install --python /tmp/stockshift-wheel/bin/python --no-deps dist/*.whl
           uv run --locked python tests/pdf_fixture.py > /tmp/stockshift-pdf.base64
           /tmp/stockshift-wheel/bin/python -I tests/pdf_package_smoke.py < /tmp/stockshift-pdf.base64
+          uv run --locked python tests/ocr_fixture.py > /tmp/stockshift-scan.base64
+          /tmp/stockshift-wheel/bin/python -I tests/ocr_package_smoke.py < /tmp/stockshift-scan.base64
           cd /tmp
           /tmp/stockshift-wheel/bin/python -c "from stockshift_worker.contracts import validate_contract; validate_contract('job-status', {'schema_version': 'v1', 'job_id': '11111111-1111-4111-8111-111111111111', 'state': 'queued', 'stage': None, 'completed_units': 0, 'total_units': None, 'failure_code': None})"
       - name: Build CPU worker image and check credential-free smoke command
@@ -62,5 +64,6 @@ jobs:
           docker build -t stockshift-worker:ci services/worker
           docker run --rm --network none stockshift-worker:ci
           services/worker/.venv/bin/python services/worker/tests/pdf_fixture.py | docker run --rm -i --network none --mount "type=bind,source=$PWD/services/worker/tests/pdf_package_smoke.py,target=/tmp/pdf_package_smoke.py,readonly" stockshift-worker:ci python -I /tmp/pdf_package_smoke.py
+          services/worker/.venv/bin/python services/worker/tests/ocr_fixture.py | docker run --rm -i --network none --mount "type=bind,source=$PWD/services/worker/tests/ocr_package_smoke.py,target=/tmp/ocr_package_smoke.py,readonly" stockshift-worker:ci python -I /tmp/ocr_package_smoke.py
       - name: Check patch whitespace
         run: git show --format= --check HEAD

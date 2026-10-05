@@ -1,5 +1,12 @@
 # StockShift architecture assessment and implementation proposal
 
+Increment 8: `RoutedPdfExtractor` preserves direct digital parsing and adds page-level
+PaddleOCR-VL serving behind `DocumentExtractor`. Worker-only OCR request reservations,
+immutable cached responses and usage use tenant/source/lease fencing in private
+Postgres tables. Corrected OCR records use the existing normalized contract, queue,
+reconciliation, review and export; explicit source verification is saved in immutable
+correction revisions. See [OCR boundary and limitations](PADDLEOCR_WORKFLOW.md).
+
 Date: 5 October 2026. Status: proposal only; no application implementation or infrastructure provisioning.
 
 ## 1. Evidence and scope

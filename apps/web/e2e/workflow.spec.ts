@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawnSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -11,7 +11,9 @@ import { Client } from "pg";
 const env = Object.fromEntries(
   Object.entries(process.env).filter(
     ([key]) =>
-      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_)/i.test(key),
+      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_OCR_)/i.test(
+        key,
+      ),
   ),
 );
 const state = JSON.parse(
@@ -106,7 +108,7 @@ async function upload(page: Page, old: Buffer, next: Buffer) {
     await fieldset.getByLabel("Unit", { exact: true }).fill("each");
   }
 }
-function worker() {
+function worker(ocrEndpoint?: string) {
   const python = resolve(
     "services/worker/.venv",
     process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
@@ -117,6 +119,7 @@ function worker() {
     {
       env: {
         ...env,
+        ...(ocrEndpoint ? { STOCKSHIFT_OCR_ENDPOINT: ocrEndpoint } : {}),
         STOCKSHIFT_LOCAL_SUPABASE_URL: state.API_URL,
         STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY: state.SERVICE_ROLE_KEY,
       },
@@ -126,6 +129,272 @@ function worker() {
   );
   expect(result.status, result.stderr).toBe(0);
 }
+
+async function ocrService(mode = "ok") {
+  const python = resolve(
+    "services/worker/.venv",
+    process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
+  );
+  const child = spawn(
+    python,
+    ["services/worker/tests/ocr_stub.py", "8771", mode],
+    { env, stdio: ["ignore", "pipe", "pipe"] },
+  );
+  await new Promise<void>((ready, reject) => {
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error("Synthetic OCR stub did not start"));
+    }, 15000);
+    child.stdout.on("data", (b) => {
+      if (String(b).includes("STUB READY")) {
+        clearTimeout(timer);
+        ready();
+      }
+    });
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code !== null) reject(new Error("Stub exited " + code));
+    });
+  });
+  return child;
+}
+async function scannedUpload(
+  page: Page,
+  side: "Current" | "New",
+  mixed = false,
+) {
+  const python = resolve(
+    "services/worker/.venv",
+    process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
+  );
+  const bytes = Buffer.from(
+    execFileSync(
+      python,
+      [
+        "services/worker/tests/ocr_fixture.py",
+        ...(mixed ? ["mixed"] : []),
+        ...(side === "New" ? ["incoming"] : []),
+      ],
+      { env, encoding: "utf8" },
+    ).trim(),
+    "base64",
+  );
+  await page
+    .getByLabel(
+      side === "Current" ? "Current catalogue file" : "New catalogue file",
+    )
+    .setInputFiles({
+      name: side.toLowerCase() + ".pdf",
+      mimeType: "application/pdf",
+      buffer: bytes,
+    });
+  const area = page.locator(".pdf-settings").nth(side === "Current" ? 0 : 1);
+  await expect(
+    area.getByText("2 pages available", { exact: false }),
+  ).toBeVisible({ timeout: 15000 });
+  return area;
+}
+
+test("scanned and mixed PDF OCR correction review/export survives reload", async ({
+  page,
+}, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const stub = await ocrService();
+  try {
+    await create(page, "Scanned supplier OCR review");
+    const a = await scannedUpload(page, "Current", true),
+      b = await scannedUpload(page, "New");
+    await a.getByRole("button", { name: "Extract selected pages" }).click();
+    worker();
+    await expect(a.getByRole("heading", { name: "OCR required" })).toBeVisible({
+      timeout: 15000,
+    });
+    for (const area of [a, b]) {
+      await area.getByLabel("Extraction method").selectOption("auto");
+      await area
+        .getByRole("button", { name: "Extract selected pages" })
+        .click();
+    }
+    const w = randomUUID(),
+      held = await admin.rpc("claim_csv_job", { p_worker: w });
+    expect(held.error).toBeNull();
+    await admin.rpc("pdf_extraction_progress", {
+      p_tenant: held.data.tenant_id,
+      p_job: held.data.id,
+      p_worker: w,
+      p_token: held.data.lease_token,
+      p_completed: 1,
+      p_total: 2,
+    });
+    await expect(a.getByText(/OCR processing.*1 \/ 2 pages/)).toBeVisible();
+    await page.screenshot({
+      path: `.tools/${info.project.name}-ocr-progress.png`,
+      fullPage: true,
+    });
+    const db = new Client({
+      host: "127.0.0.1",
+      port: 54322,
+      user: "postgres",
+      password: "postgres",
+      database: "postgres",
+      ssl: false,
+    });
+    await db.connect();
+    await db.query(
+      "update public.jobs set lease_expires_at=now()-interval '1 second' where id=$1",
+      [held.data.id],
+    );
+    await db.end();
+    worker("http://127.0.0.1:8771/layout-parsing");
+    worker("http://127.0.0.1:8771/layout-parsing");
+    await mapPdf(page, 0);
+    await mapPdf(page, 1);
+    await expect(b.getByText(/OCR completed · correction/)).toBeVisible();
+    await b
+      .getByLabel("I checked the selected table", { exact: false })
+      .check();
+    await b.getByRole("button", { name: "Confirm PDF mapping" }).click();
+    await expect(
+      b.getByRole("alert").filter({ hasText: "Verify each OCR product row" }),
+    ).toBeVisible();
+    await b
+      .getByLabel("Correct cost_price page 1 row 2")
+      .fill("1.002000000000000001");
+    for (const area of [a, b]) {
+      for (const checkbox of await area
+        .getByRole("checkbox", { name: /Verify OCR row/ })
+        .all())
+        await checkbox.check();
+      await area
+        .getByLabel("I checked the selected table", { exact: false })
+        .check();
+      await area.getByRole("button", { name: "Save correction draft" }).click();
+      await expect(
+        area.getByText("Correction draft saved.", { exact: true }),
+      ).toBeVisible();
+    }
+    await page.screenshot({
+      path: `.tools/${info.project.name}-ocr-correction.png`,
+      fullPage: true,
+    });
+    await noOverflow(page);
+    await page.reload();
+    await expect(
+      page
+        .locator(".pdf-settings")
+        .nth(1)
+        .getByLabel("Correct cost_price page 1 row 2"),
+    ).toHaveValue("1.002000000000000001");
+    for (const area of await page.locator(".pdf-settings").all()) {
+      for (const checkbox of await area
+        .getByRole("checkbox", { name: /Verify OCR row/ })
+        .all())
+        await expect(checkbox).toBeChecked();
+      await area.getByRole("button", { name: "Confirm PDF mapping" }).click();
+      await expect(
+        area.getByText("PDF mapping confirmed. Ready for comparison.", {
+          exact: true,
+        }),
+      ).toBeVisible();
+    }
+    await page.reload();
+    await expect(
+      page
+        .locator(".pdf-settings")
+        .nth(1)
+        .getByText(/Revision 2 · confirmed/),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Start comparison", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Comparison queued" }),
+    ).toBeVisible();
+    worker();
+    await expect(
+      page.getByRole("region", { name: "Persisted outcome counts" }),
+    ).toBeVisible({ timeout: 15000 });
+    for (let i = 0; i < 2; i++) {
+      await page
+        .getByRole("button", { name: "Review", exact: true })
+        .first()
+        .click();
+      await page.locator("dialog summary").click();
+      await expect(
+        page
+          .locator(".evidence-table")
+          .getByText(/Page 1 \/ 3/)
+          .first(),
+      ).toBeVisible();
+      await page
+        .getByLabel("Decision reason")
+        .fill("Scanned catalogue has blank price; exclude pending correction");
+      await page
+        .getByRole("button", { name: "Confirm no match · exclude" })
+        .click();
+    }
+    await page.reload();
+    const pending = page.waitForEvent("download");
+    await page
+      .getByRole("button", { name: "↓ Export changed products" })
+      .click();
+    const download = await pending,
+      path = await download.path();
+    expect(readFileSync(path!, "utf8")).toContain("1.002000000000000001");
+    await page.screenshot({
+      path: `.tools/${info.project.name}-ocr-complete.png`,
+      fullPage: true,
+    });
+    await noOverflow(page);
+    expect(errors).toEqual([]);
+  } finally {
+    stub.kill();
+  }
+});
+
+test("OCR rate-limit retry preserves page evidence and re-entry state", async ({
+  page,
+}, info) => {
+  const stub = await ocrService("rate_once");
+  try {
+    await create(page, "OCR retry state");
+    const area = await scannedUpload(page, "Current");
+    await area.getByLabel("Extraction method").selectOption("auto");
+    await area.getByRole("button", { name: "Extract selected pages" }).click();
+    worker("http://127.0.0.1:8771/layout-parsing");
+    await expect(area.getByText(/Retry scheduled/)).toBeVisible({
+      timeout: 15000,
+    });
+    await page.reload();
+    await expect(page.getByText(/Retry scheduled/)).toBeVisible();
+    await page.screenshot({
+      path: `.tools/${info.project.name}-ocr-retry.png`,
+      fullPage: true,
+    });
+    const db = new Client({
+      host: "127.0.0.1",
+      port: 54322,
+      user: "postgres",
+      password: "postgres",
+      database: "postgres",
+      ssl: false,
+    });
+    await db.connect();
+    await db.query(
+      "update public.jobs set available_at=now()-interval '1 second' where tenant_id=$1 and status='retry_wait'",
+      [account.tenant],
+    );
+    await db.end();
+    worker("http://127.0.0.1:8771/layout-parsing");
+    await expect(page.getByText(/OCR completed · correction/)).toBeVisible({
+      timeout: 15000,
+    });
+    await noOverflow(page);
+  } finally {
+    stub.kill();
+  }
+});
 test("authenticated upload → durable processing → review → trusted export survives reload", async ({
   page,
 }, info) => {

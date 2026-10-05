@@ -1,4 +1,4 @@
-# CSV/XLSX/digital PDF CPU worker. Build with services/worker as the Docker build context.
+# CSV/XLSX/digital PDF and OCR adapter CPU worker; GPU inference stays external.
 FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 FROM python:3.11.14-slim-bookworm
 COPY --from=uv /uv /usr/local/bin/uv

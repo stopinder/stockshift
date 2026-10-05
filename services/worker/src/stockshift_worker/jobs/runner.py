@@ -9,6 +9,7 @@ from uuid import UUID, uuid5
 from stockshift_worker.domain.csv_engine import CsvOptions, parse_csv, reconcile
 from stockshift_worker.domain.xlsx import MIME, WorkbookError, parse_xlsx
 from stockshift_worker.extraction.digital_pdf import PdfError, normalize_pdf
+from stockshift_worker.extraction.paddleocr import OcrFailure
 from stockshift_worker.jobs.gateway import LeaseLost, TransportError
 from stockshift_worker.jobs.pdf import extract_job
 
@@ -159,9 +160,15 @@ def run_once(gateway, worker_id):
         # Reclaimed jobs belong to the replacement worker; never report failure against them.
         return True
     except Exception as exc:
-        retryable = not isinstance(exc, (ValueError, TypeError, LookupError, csv.Error))
+        retryable = (
+            exc.retryable
+            if isinstance(exc, OcrFailure)
+            else not isinstance(exc, (ValueError, TypeError, LookupError, csv.Error))
+        )
         failure = {
-            "code": "pdf_timeout"
+            "code": exc.code
+            if isinstance(exc, OcrFailure)
+            else "pdf_timeout"
             if isinstance(exc, TimeoutError)
             else "invalid_pdf_job"
             if isinstance(exc, PdfError) or job.get("kind") == "extract_pdf" and not retryable

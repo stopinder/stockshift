@@ -14,6 +14,7 @@ for (const args of [
   ['--test', 'supabase/tests/jobs.local.mjs'],
   ['--test', 'supabase/tests/review.local.mjs'],
   ['--test', 'supabase/tests/pdf.local.mjs'],
+  ['--test', 'supabase/tests/ocr.local.mjs'],
   ['--import', 'tsx', '--test', 'supabase/tests/upload.local.ts'],
 ]) {
   const result = spawnSync(process.execPath, args, { cwd: root, env, stdio: 'inherit' })

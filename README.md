@@ -1,5 +1,11 @@
 # StockShift
 
+Increment 8 adds opt-in PaddleOCR-VL page routing behind the worker's existing
+extractor boundary. Digital pages keep direct parsing; OCR rows require source
+verification and durable correction before comparison. See
+[the local OCR workflow](docs/PADDLEOCR_WORKFLOW.md) for configuration, limits,
+private caching, synthetic tests and the unverified real-model boundary.
+
 StockShift is a supplier catalogue reconciliation product.
 
 ## Product target

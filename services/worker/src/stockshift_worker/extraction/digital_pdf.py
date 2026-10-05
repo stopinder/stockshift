@@ -252,6 +252,7 @@ def normalize_pdf(revision, *, source_file_id, source_name):
             "for unsupported pages."
         )
     cfg, corrections = deepcopy(revision["configuration"]), revision["corrections"]
+    verified_ocr = cfg.pop("ocr_verified_rows", [])
     table, header, repeat, confirmed = (
         cfg.pop(k, None)
         for k in ("table_index", "header_row", "repeat_headers", "structure_confirmed")
@@ -331,6 +332,14 @@ def normalize_pdf(revision, *, source_file_id, source_name):
             )
             product = deepcopy(one.products[0])
             product["record_id"], product["evidence_ids"] = r["record_id"], []
+            if (
+                any(
+                    w["code"] == "ocr_verification_required" and w["field"] == r["record_id"]
+                    for w in payload["warnings"]
+                )
+                and r["record_id"] not in verified_ocr
+            ):
+                raise PdfError("Verify each OCR product row against its source before comparison.")
             if any(w["code"] == "structure_review" for w in payload["warnings"]):
                 product["validation_issues"].append(
                     {

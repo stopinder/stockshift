@@ -546,7 +546,15 @@ onUnmounted(() => {
         </p>
         <button
           class="primary"
-          :disabled="busy || !files.current || !files.incoming"
+          :disabled="
+            busy ||
+            !files.current ||
+            !files.incoming ||
+            (/\.pdf$/i.test(files.current?.original_filename ?? '') &&
+              !currentSettings.pdfRevisionId) ||
+            (/\.pdf$/i.test(files.incoming?.original_filename ?? '') &&
+              !incomingSettings.pdfRevisionId)
+          "
         >
           {{ busy ? "Working…" : "Start comparison" }}
         </button>

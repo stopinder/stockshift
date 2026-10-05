@@ -529,6 +529,6 @@ test('PDF page discovery authenticates, uses tenant RLS and verifies original pr
   const res={statusCode:0,output:'',setHeader(){},end(value:string){this.output=value}}
   await pdfHandler({method:'POST',headers:{authorization:`Bearer ${users[role]!.token}`},body:{tenantId:A,fileId:file.fileId}} as Parameters<typeof pdfHandler>[0],res as unknown as Parameters<typeof pdfHandler>[1])
   assert.equal(res.statusCode,role==='other'?403:200)
-  if(role!=='other') assert.deepEqual(JSON.parse(res.output),{pages:2})
+  if(role!=='other') assert.deepEqual(JSON.parse(res.output),{pages:2,ocrModel:'PaddleOCR-VL-1.6'})
  }
 })

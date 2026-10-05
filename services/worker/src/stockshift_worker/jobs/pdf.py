@@ -12,6 +12,7 @@ from threading import Thread
 
 from stockshift_worker.extraction.base import ExtractionResult
 from stockshift_worker.extraction.digital_pdf import PdfError
+from stockshift_worker.extraction.paddleocr import OcrFailure
 from stockshift_worker.jobs.gateway import LeaseLost
 
 
@@ -51,6 +52,23 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
         for k, v in os.environ.items()
         if k.upper() in {"SYSTEMROOT", "WINDIR", "PATH", "TEMP", "TMP"}
     }
+    if cfg.get("provider") == "auto":
+        env.update(
+            {
+                k: v
+                for k, v in os.environ.items()
+                if k
+                in {
+                    "STOCKSHIFT_OCR_ENDPOINT",
+                    "STOCKSHIFT_OCR_TOKEN",
+                    "STOCKSHIFT_OCR_MODEL",
+                    "STOCKSHIFT_OCR_TIMEOUT",
+                    "STOCKSHIFT_OCR_MAX_PAGES",
+                    "STOCKSHIFT_OCR_MAX_DOCUMENT_PAGES",
+                }
+            }
+        )
+        timeout = 180
     child = subprocess.Popen(
         [sys.executable, "-I", "-m", "stockshift_worker.entrypoints.pdf"],
         stdin=subprocess.PIPE,
@@ -73,17 +91,24 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
     thread = Thread(target=read, daemon=True)
     thread.start()
     try:
-        child.stdin.write(
+        input_payload = (
             json.dumps(
                 {
                     "operation": "extract",
                     "data": base64.b64encode(data).decode(),
                     "configuration": cfg,
                     "request": request,
+                    "ocr_cache": loaded.get("ocr_cache", {}),
                 }
             ).encode()
+            + b"\n"
         )
-        child.stdin.close()
+        if len(input_payload) >= 48000000:
+            raise PdfError("PDF/cache input exceeds supported size. Select fewer pages.")
+        child.stdin.write(input_payload)
+        child.stdin.flush()
+        if cfg.get("provider") != "auto":
+            child.stdin.close()
         deadline = time.monotonic() + timeout
         result = None
         while True:
@@ -108,6 +133,41 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
                     p_completed=progress["completed"],
                     p_total=progress["total"],
                 )
+            elif "ocr_request" in output:
+                gateway.rpc(
+                    "record_ocr_page",
+                    **lease,
+                    p_event="request",
+                    p_page=output["ocr_request"]["page"],
+                    p_hash=output["ocr_request"]["request_hash"],
+                    p_value={},
+                )
+                child.stdin.write(b'{"ok":true}\n')
+                child.stdin.flush()
+            elif "ocr_page" in output:
+                gateway.rpc(
+                    "record_ocr_page",
+                    **lease,
+                    p_event="ready",
+                    p_page=output["ocr_page"]["page"],
+                    p_hash=output["ocr_page"]["request_hash"],
+                    p_value=output["ocr_page"]["response"],
+                )
+                child.stdin.write(b'{"ok":true}\n')
+                child.stdin.flush()
+            elif "ocr_failure" in output:
+                gateway.rpc(
+                    "record_ocr_page",
+                    **lease,
+                    p_event="failed",
+                    p_page=output["ocr_failure"]["page"],
+                    p_hash=output["ocr_failure"]["request_hash"],
+                    p_value=output["ocr_failure"]["failure"],
+                )
+                child.stdin.write(b'{"ok":true}\n')
+                child.stdin.flush()
+            elif "error" in output and "code" in output:
+                raise OcrFailure(output["code"], output["error"], retryable=output["retryable"])
             elif "error" in output:
                 raise PdfError(output["error"])
             elif "value" in output:

@@ -81,6 +81,7 @@ class LocalGateway:
             "load_pdf_extraction",
             "pdf_extraction_progress",
             "complete_pdf_extraction",
+            "record_ocr_page",
             "heartbeat_csv_job",
             "load_csv_job",
             "complete_csv_job",

@@ -16,15 +16,30 @@ type Locator = { page: number; table: string; row: number };
 type Extraction = {
   id: string;
   status: string;
-  configuration: { first_page: number; last_page: number; strategy: string };
+  configuration: {
+    first_page: number;
+    last_page: number;
+    strategy: string;
+    provider?: string;
+    model_version?: string;
+  };
   completed_pages: number;
   total_pages: number | null;
   failure_reason: { message: string } | null;
-  raw_pages: { page: number; text: string }[] | null;
+  raw_pages:
+    | {
+        page: number;
+        text: string;
+        provider?: string;
+        confidence?: number | null;
+        status?: string;
+        message?: string;
+      }[]
+    | null;
   payload: {
     records: RecordRow[];
     evidence: { evidence_id: string; locator: Locator }[];
-    warnings: { code: string; message: string }[];
+    warnings: { code: string; message: string; field?: string | null }[];
   } | null;
 };
 type Revision = {
@@ -47,6 +62,26 @@ const tableIndex = ref(1),
   repeat = ref(true),
   confirmed = ref(false);
 const corrections = ref<Record<string, Record<string, string | null>>>({});
+const providerChoice = ref("digital"),
+  ocrModel = ref("PaddleOCR-VL-1.6"),
+  verifiedOcr = ref<string[]>([]);
+const ocrIds = computed(
+  () =>
+    new Set(
+      extraction.value?.payload?.warnings
+        .filter((w) => w.code === "ocr_verification_required")
+        .map((w) => w.field) ?? [],
+    ),
+);
+const hasOcr = computed(() =>
+  extraction.value?.raw_pages?.some((p) => p.provider === "paddleocr-vl"),
+);
+function verifyOcr(id: string, checked: boolean) {
+  verifiedOcr.value = checked
+    ? [...new Set([...verifiedOcr.value, id])]
+    : verifiedOcr.value.filter((v) => v !== id);
+  settings.value.pdfRevisionId = undefined;
+}
 const error = ref(""),
   busy = ref(false),
   notice = ref(""),
@@ -126,6 +161,7 @@ function original(r: RecordRow, field: string) {
   );
 }
 function correct(r: RecordRow, field: string, value: string | null) {
+  verifyOcr(r.record_id, false);
   settings.value.pdfRevisionId = undefined;
   notice.value = "Unsaved corrections";
   const entry = (corrections.value[r.record_id] ??= {});
@@ -152,6 +188,7 @@ function configuration() {
     header_row: headerRow.value,
     repeat_headers: repeat.value,
     structure_confirmed: confirmed.value,
+    ...(ocrIds.value.size ? { ocr_verified_rows: verifiedOcr.value } : {}),
   };
 }
 function validate() {
@@ -235,6 +272,7 @@ function restore(v: Revision) {
   headerRow.value = c.header_row;
   repeat.value = c.repeat_headers;
   confirmed.value = c.structure_confirmed;
+  verifiedOcr.value = c.ocr_verified_rows ?? [];
   corrections.value = JSON.parse(JSON.stringify(v.corrections));
   Object.assign(settings.value, {
     sku: c.columns.supplier_sku,
@@ -275,6 +313,8 @@ async function refresh(initial = false) {
       first.value = c.first_page;
       last.value = c.last_page;
       strategy.value = c.strategy;
+      providerChoice.value = c.provider ?? "digital";
+      ocrModel.value = c.model_version ?? ocrModel.value;
     }
     if (extraction.value?.status === "ready") {
       const saved = await props.client
@@ -317,6 +357,14 @@ async function extract() {
         first_page: first.value,
         last_page: last.value,
         strategy: strategy.value,
+        ...(providerChoice.value === "auto"
+          ? {
+              provider: "auto",
+              model_version: ocrModel.value,
+              dpi: 144,
+              ocr_version: "1",
+            }
+          : {}),
       },
     });
     if (response.error) throw response.error;
@@ -324,6 +372,7 @@ async function extract() {
     revision.value = null;
     corrections.value = {};
     confirmed.value = false;
+    verifiedOcr.value = [];
     settings.value.pdfRevisionId = undefined;
     await refresh(true);
   } catch (e) {
@@ -341,6 +390,17 @@ async function save(confirm: boolean) {
     if (confirm && !confirmed.value)
       throw new Error(
         "Confirm the selected rows, columns and page continuation before reconciliation.",
+      );
+    if (
+      confirm &&
+      productRows.value.some(
+        (r) =>
+          ocrIds.value.has(r.record_id) &&
+          !verifiedOcr.value.includes(r.record_id),
+      )
+    )
+      throw new Error(
+        "Verify each OCR product row against its source before confirming.",
       );
     const response = await props.client.rpc("save_pdf_revision", {
       p_tenant: props.tenantId,
@@ -411,6 +471,7 @@ onMounted(async () => {
       })
     ).json();
     pageCount.value = meta.pages;
+    ocrModel.value = meta.ocrModel ?? "PaddleOCR-VL-1.6";
     last.value = Math.min(meta.pages, 50);
   } catch (e) {
     error.value = friendlyError(e);
@@ -431,12 +492,18 @@ onUnmounted(() => {
 </script>
 <template>
   <section class="pdf-settings" :aria-label="'PDF import · ' + side">
-    <h3>Digital PDF · {{ side }}</h3>
+    <h3>PDF · {{ side }}</h3>
     <p class="hint">
       Choose pages and table structure. Text is read directly; image-only or
       unsupported pages require OCR. No fields are guessed.
     </p>
     <div class="field-grid">
+      <label
+        >Extraction method<select v-model="providerChoice">
+          <option value="digital">Digital extraction only</option>
+          <option value="auto">Digital + OCR for required pages</option>
+        </select></label
+      >
       <label
         >First page<input
           v-model.number="first"
@@ -481,10 +548,28 @@ onUnmounted(() => {
       {{
         extraction.status === "queued"
           ? "PDF extraction queued"
-          : "Extracting digital PDF"
+          : extraction.configuration.provider === "auto"
+            ? "OCR processing · checking each page"
+            : "Extracting digital PDF"
       }}
       · {{ extraction.completed_pages }} /
       {{ extraction.total_pages ?? "—" }} pages. You can leave and return.
+    </p>
+    <p
+      v-if="extraction?.failure_reason && extraction.status === 'queued'"
+      class="alert"
+      role="status"
+    >
+      {{ extraction.failure_reason.message }} Retry scheduled; completed OCR
+      pages will be reused.
+    </p>
+    <p
+      v-if="extraction?.status === 'ready' && hasOcr"
+      class="ocr-review-note"
+      role="status"
+    >
+      OCR completed · correction/source verification required. Review every OCR
+      product row before confirmation.
     </p>
     <section
       v-if="extraction?.status === 'ocr_required'"
@@ -494,7 +579,8 @@ onUnmounted(() => {
       <h4>OCR required</h4>
       <p>
         Selected pages lack reliable embedded text/table structure. Upload
-        CSV/XLSX or a ruled digital PDF. Scanned-image OCR is not available yet.
+        CSV/XLSX, or select Digital + OCR for required pages and extract again.
+        If OCR has already run, failed pages must be resolved before comparison.
       </p>
     </section>
     <p v-if="extraction?.status === 'failed'" class="alert" role="alert">
@@ -505,11 +591,31 @@ onUnmounted(() => {
     </p>
     <details v-for="p in extraction?.raw_pages ?? []" :key="p.page">
       <summary>Source text · page {{ p.page }}</summary>
+      <p class="hint">
+        {{
+          p.provider === "paddleocr-vl"
+            ? "OCR extraction"
+            : "Digital extraction"
+        }}
+        ·
+        {{
+          p.provider === "paddleocr-vl"
+            ? p.confidence == null
+              ? "Confidence unavailable; verify against source"
+              : "Provider score " +
+                p.confidence +
+                " (uncalibrated); verify against source"
+            : "Embedded text"
+        }}
+      </p>
+      <p v-if="p.message" class="alert">{{ p.message }}</p>
       <pre class="pdf-source-text">{{ p.text || "(No embedded text)" }}</pre>
     </details>
     <template v-if="extraction?.status === 'ready'">
       <p
-        v-for="warning in extraction.payload?.warnings ?? []"
+        v-for="warning in extraction.payload?.warnings.filter(
+          (w) => w.code !== 'ocr_verification_required',
+        ) ?? []"
         :key="warning.code + warning.message"
         class="hint"
       >
@@ -572,7 +678,27 @@ onUnmounted(() => {
               v-for="r in productRows.slice(offset, offset + 25)"
               :key="r.record_id"
             >
-              <td>Page {{ locator(r).page }} · row {{ locator(r).row }}</td>
+              <td>
+                Page {{ locator(r).page }} · row {{ locator(r).row }}
+                <label v-if="ocrIds.has(r.record_id)" class="checkbox"
+                  ><input
+                    type="checkbox"
+                    :aria-label="
+                      'Verify OCR row page ' +
+                      locator(r).page +
+                      ' row ' +
+                      locator(r).row
+                    "
+                    :checked="verifiedOcr.includes(r.record_id)"
+                    @change="
+                      verifyOcr(
+                        r.record_id,
+                        ($event.target as HTMLInputElement).checked,
+                      )
+                    "
+                  />Checked against source</label
+                >
+              </td>
               <td v-for="(_, field) in mappings" :key="field">
                 <span class="pdf-original"
                   >Original: {{ original(r, String(field)) || "(blank)" }}</span
@@ -662,6 +788,13 @@ onUnmounted(() => {
   padding: 1rem 0;
   border-top: 1px solid var(--border, #d9dee6);
 }
+.ocr-review-note {
+  padding: 1rem;
+  border: 1px solid #e7d9bc;
+  border-radius: 4px;
+  background: #fbf7ee;
+  color: #936b27;
+}
 .pdf-source-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -708,6 +841,7 @@ onUnmounted(() => {
 }
 .checkbox input {
   width: 1rem;
+  min-width: 1rem;
   min-height: 1rem;
   height: 1rem;
   padding: 0;

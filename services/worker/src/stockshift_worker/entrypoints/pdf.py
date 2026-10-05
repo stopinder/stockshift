@@ -6,6 +6,7 @@ import sys
 
 from stockshift_worker.extraction.base import ExtractionRequest
 from stockshift_worker.extraction.digital_pdf import DigitalPdfExtractor, PdfError, inspect_pdf
+from stockshift_worker.extraction.paddleocr import OcrFailure, RoutedPdfExtractor
 
 
 class Context:
@@ -21,15 +22,29 @@ class Context:
 
 def main():
     try:
-        raw = sys.stdin.buffer.read(15000000)
+        # Original bytes plus bounded persisted page-cache responses on retry.
+        raw = sys.stdin.buffer.readline(48000000)
         value = json.loads(raw)
         data = base64.b64decode(value["data"], validate=True)
         if value.get("operation") == "extract":
-            provider = DigitalPdfExtractor(data, value["configuration"])
+            cfg = value["configuration"]
+
+            def event(v):
+                print(json.dumps(v), flush=True)
+                if json.loads(sys.stdin.buffer.readline(1024)).get("ok") is not True:
+                    raise PdfError("OCR lease or usage authorization was rejected.")
+
+            provider = (
+                RoutedPdfExtractor(data, cfg, cache=value.get("ocr_cache"), event=event)
+                if cfg.get("provider") == "auto"
+                else DigitalPdfExtractor(data, cfg)
+            )
             result = provider.extract(ExtractionRequest.from_payload(value["request"]), Context())
             output = {"value": {"payload": result.to_payload(), "pages": provider.raw_pages}}
         else:
             output = {"value": inspect_pdf(data)}
+    except OcrFailure as exc:
+        output = {"error": str(exc), "code": exc.code, "retryable": exc.retryable}
     except PdfError as exc:
         output = {"error": str(exc)}
     except Exception:
