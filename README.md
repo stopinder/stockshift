@@ -30,9 +30,14 @@ The application should accept current/internal catalogues and new supplier files
 
 ## Current status
 
-The production workspace foundation is implemented. The existing private CSV MVP is not present.
-The web app shows an honest setup page; the Python CLI is a no-op. There are no parsers,
-comparisons, dashboards, connected services, database migrations, billing, or OCR models yet.
+The production foundation and local deterministic Python CSV engine are implemented.
+The existing private CSV MVP is not present. The web app remains a setup page and
+the Python CLI remains a no-op queue scaffold. The local engine parses explicitly
+configured CSV files, validates v1 products/evidence, reconciles exact SKUs, and
+exports approved changed products. There are no web uploads/comparisons, connected
+services, database migrations, billing, XLSX/PDF parsers, or OCR models yet.
+See [the local CSV engine guide](services/worker/README.md) for the callable API,
+numeric/review rules, fixture example, and limitations.
 
 ## Workspace and ownership
 
@@ -130,15 +135,16 @@ The CPU image installs locked runtime dependencies, includes packaged schemas an
 as a non-root user. It has no processing provider or network connection in its entrypoint.
 The current Docker command exits after the no-op smoke message; it is not a running service.
 
-## Next implementation commit — requires approval
+## Current implementation increment
 
 `feat: add deterministic CSV reconciliation engine`
 
-Add direct CSV parsing with explicit encoding/delimiter/header and numeric conventions;
-normalize string identifiers and exact decimal prices; match unique exact supplier SKUs;
-classify unchanged, increase/decrease, new, absent and needs-review outcomes; preserve
-file/row/column evidence; generate a standard changed-products CSV. Test precision,
-duplicates/conflicting identifiers, missing SKUs/prices, zero prices, locale ambiguity,
-leading zeros and pack/UOM incompatibility. Keep it local and independent of OCR,
-Supabase, billing and the web upload workflow. Approval of this scaffold does not authorize
-that next increment.
+The local Python engine and domain tests are implemented. The shared 100-outcome
+CSV corpus covers 50 unchanged, 15 increases, 10 decreases, 10 new, 8 absent,
+5 description-only changes and 2 review outcomes. Run `uv run --locked pytest`
+from `services/worker` to check both contract parity and domain behavior.
+The web shell continues to describe its own pending upload/comparison workflow.
+
+The next increment in the architecture sequence is tenant/schema/private-storage
+foundations with isolation tests, followed by durable job execution. It has not
+been started. No cloud provisioning or deployment is part of this CSV commit.
