@@ -19,3 +19,5 @@ ruff_cache/
 .tools/
 *.egg-info/
 build/
+supabase/.temp/
+supabase/.branches/

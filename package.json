@@ -15,10 +15,18 @@
   "scripts": {
     "dev": "npm run dev --workspace @stockshift/web",
     "typecheck": "npm run typecheck --workspaces",
-    "test": "npm run test --workspace @stockshift/contracts",
+    "test": "npm run test --workspaces && npm run test:db",
+    "test:db": "node --test supabase/tests/*.test.mjs",
+    "test:local": "node scripts/verify-supabase-local.mjs",
+    "supabase:local": "node scripts/supabase-local.mjs",
     "contracts:generate": "npm run generate --workspace @stockshift/contracts",
     "contracts:check": "npm run generate:check --workspace @stockshift/contracts",
     "build": "npm run build --workspace @stockshift/web",
     "check": "npm run contracts:check && npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "pg": "8.23.1",
+    "supabase": "2.119.0"
   }
 }

@@ -30,14 +30,17 @@ The application should accept current/internal catalogues and new supplier files
 
 ## Current status
 
-The production foundation and local deterministic Python CSV engine are implemented.
+The production foundation, local deterministic Python CSV engine, and local-only
+Supabase tenant/private-upload foundations are implemented.
 The existing private CSV MVP is not present. The web app remains a setup page and
 the Python CLI remains a no-op queue scaffold. The local engine parses explicitly
 configured CSV files, validates v1 products/evidence, reconciles exact SKUs, and
-exports approved changed products. There are no web uploads/comparisons, connected
-services, database migrations, billing, XLSX/PDF parsers, or OCR models yet.
+exports approved changed products. There are no browser uploads/comparisons,
+connected hosted services, billing, XLSX/PDF parsers, or OCR models yet.
 See [the local CSV engine guide](services/worker/README.md) for the callable API,
 numeric/review rules, fixture example, and limitations.
+See [the local Supabase guide](supabase/README.md) for migration/security checks,
+server upload lifecycle, local-only safety rules and real local stack checks.
 
 ## Workspace and ownership
 
@@ -45,7 +48,9 @@ numeric/review rules, fixture example, and limitations.
 - `packages/contracts`: canonical v1 JSON Schemas, generated TypeScript types and runtime validation.
 - `services/worker`: installable Python worker scaffold, offline contract validation and `DocumentExtractor` protocol.
 - `tests/fixtures/contracts`: synthetic boundary fixtures shared by both language test suites.
-- `.github/workflows/ci.yml`: locked installs, schema drift, typechecks, tests, builds and CPU image smoke check.
+- `apps/web/server` and `api/uploads.ts`: local-only authenticated upload intent/finalization; no browser flow.
+- `supabase`: local configuration, seven-table migration and embedded PostgreSQL RLS/security tests.
+- `.github/workflows/ci.yml`: locked installs, schema drift, typechecks, JS/database/Python tests, builds and CPU image smoke check.
 
 Python will own parsing, normalization, matching, decimal calculations and export generation.
 The browser will display results; Vercel will authorize and orchestrate work. See
@@ -55,8 +60,9 @@ The browser will display results; Vercel will authorize and orchestrate work. Se
 ## Local setup
 
 Use Node `22.21.0` (see `.nvmrc`), npm `10.9.4`, Python `3.11.3` and uv `0.12.23`.
-Dependencies are pinned in manifests and both lockfiles. No credentials, database,
-GPU or environment variables are required. `.env.example` lists reserved future names;
+Dependencies are pinned in manifests and both lockfiles. Tests and the web shell need
+no credentials, database service, GPU or environment variables. The optional local
+upload endpoint needs user-configured keys from a new local stack only. `.env.example` lists names;
 never put a server key in a `VITE_` variable.
 
 From the repository root:
@@ -121,7 +127,8 @@ guards additionally check cross-field progress/completeness counts.
 
 Vercel project root is `apps/web`; `vercel.json` sets the Vite build output and a SPA
 fallback that excludes `/api` and `/api/*`. npm resolves the root workspace and lockfile.
-No API endpoint or live deployment exists in this commit. A preview deployment will
+The upload endpoint exists but is restricted to a local Supabase API. No live
+deployment exists. A preview deployment will
 verify platform routing/workspace behavior when deployment is authorized later.
 
 With Docker available, from the repository root:
@@ -135,7 +142,7 @@ The CPU image installs locked runtime dependencies, includes packaged schemas an
 as a non-root user. It has no processing provider or network connection in its entrypoint.
 The current Docker command exits after the no-op smoke message; it is not a running service.
 
-## Current implementation increment
+## CSV implementation
 
 `feat: add deterministic CSV reconciliation engine`
 
@@ -145,6 +152,15 @@ CSV corpus covers 50 unchanged, 15 increases, 10 decreases, 10 new, 8 absent,
 from `services/worker` to check both contract parity and domain behavior.
 The web shell continues to describe its own pending upload/comparison workflow.
 
-The next increment in the architecture sequence is tenant/schema/private-storage
-foundations with isolation tests, followed by durable job execution. It has not
-been started. No cloud provisioning or deployment is part of this CSV commit.
+## Current implementation increment
+
+`feat: add Supabase foundations and private upload lifecycle`
+
+Tenant/schema/private-storage foundations and server upload operations are local
+only. `npm run check` includes the existing contracts, server lifecycle tests,
+embedded PostgreSQL migration/RLS tests, types and production shell build.
+The Docker-backed local Supabase stack has been verified with migration reset,
+32 native database/security tests, eight Auth/Storage HTTP tests and database lint.
+Run `npm run test:local` after starting and resetting the local stack. Hosted projects must not be
+accessed without separate approval as specified in the local Supabase guide.
+Durable job execution (Increment 4) has not been started.
