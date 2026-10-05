@@ -127,6 +127,10 @@ guards additionally check cross-field progress/completeness counts.
 
 Vercel project root is `apps/web`; `vercel.json` sets the Vite build output and a SPA
 fallback that excludes `/api` and `/api/*`. npm resolves the root workspace and lockfile.
+The web app manifest repeats the root Node `>=22.12.0 <23` and npm `>=10 <11`
+engines so Vercel selects Node 22.x from its project root. Node 22 uses npm 10 on
+Vercel; both manifests declare `npm@10.9.4`. Local development and CI use Node
+`22.21.0` from `.nvmrc`; `engine-strict=true` continues to reject incompatible tools.
 The upload endpoint exists but is restricted to a local Supabase API. No live
 deployment exists. A preview deployment will
 verify platform routing/workspace behavior when deployment is authorized later.
