@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stockshift-worker"
+version = "0.1.0"
+description = "StockShift worker foundation and versioned contract validation"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "jsonschema==4.26.0",
+  "referencing==0.37.0",
+  "rfc3339-validator==0.1.4",
+]
+
+[project.scripts]
+stockshift-worker = "stockshift_worker.entrypoints.cli:main"
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "ruff==0.16.10"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stockshift_worker"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

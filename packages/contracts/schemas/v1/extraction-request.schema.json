@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://contracts.stockshift.invalid/v1/extraction-request.schema.json",
+  "title": "ExtractionRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "v1",
+      "type": "string"
+    },
+    "tenant_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "file_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "job_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "object": {
+      "$ref": "common.schema.json#/definitions/ObjectReference"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "media_type": {
+      "enum": [
+        "text/csv",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/pdf"
+      ]
+    },
+    "page_selection": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "uniqueItems": true
+    },
+    "sheet_selection": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "mapping_profile_id": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/Uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "config": {
+      "$ref": "common.schema.json#/definitions/ObjectReference"
+    }
+  },
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "file_id",
+    "job_id",
+    "object",
+    "sha256",
+    "media_type",
+    "page_selection",
+    "sheet_selection",
+    "mapping_profile_id",
+    "config"
+  ]
+}

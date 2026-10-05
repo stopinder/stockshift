@@ -1,0 +1,24 @@
+{
+  "name": "stockshift",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "packages/contracts"
+  ],
+  "engines": {
+    "node": ">=22.12.0 <23",
+    "npm": ">=10 <11"
+  },
+  "packageManager": "npm@10.9.4",
+  "scripts": {
+    "dev": "npm run dev --workspace @stockshift/web",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspace @stockshift/contracts",
+    "contracts:generate": "npm run generate --workspace @stockshift/contracts",
+    "contracts:check": "npm run generate:check --workspace @stockshift/contracts",
+    "build": "npm run build --workspace @stockshift/web",
+    "check": "npm run contracts:check && npm run typecheck && npm test && npm run build"
+  }
+}

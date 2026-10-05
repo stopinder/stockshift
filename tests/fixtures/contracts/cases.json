@@ -1,0 +1,1684 @@
+[
+  {
+    "name": "normalized-product: valid v1",
+    "contract": "normalized-product",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4000",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "field-evidence: valid v1",
+    "contract": "field-evidence",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null
+    }
+  },
+  {
+    "name": "extraction-request: valid v1",
+    "contract": "extraction-request",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "object": {
+        "bucket": "source-files",
+        "object_key": "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/source.csv"
+      },
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "text/csv",
+      "page_selection": [],
+      "sheet_selection": [],
+      "mapping_profile_id": null,
+      "config": {
+        "bucket": "job-config",
+        "object_key": "fixture.json"
+      }
+    }
+  },
+  {
+    "name": "extraction-result: valid v1",
+    "contract": "extraction-result",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": 1,
+        "completed_units": 1,
+        "pending_units": [],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "6.4000",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "job-status: valid v1",
+    "contract": "job-status",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "state": "queued",
+      "stage": null,
+      "completed_units": 0,
+      "total_units": null,
+      "failure_code": null
+    }
+  },
+  {
+    "name": "comparison-outcome: valid v1",
+    "contract": "comparison-outcome",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": "11111111-1111-4111-8111-111111111111",
+      "new_record_id": "22222222-2222-4222-8222-222222222222",
+      "outcome": "changed",
+      "review_state": "not_required",
+      "change_flags": [
+        "price_increase",
+        "description"
+      ],
+      "cost_delta": "0.7000",
+      "cost_change_percent": "10.9375",
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "money: JSON number rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": 6.4,
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "money: exponent rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4e2",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "money: locale ambiguity rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "1,234",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "money: blank rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "money: NaN rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "NaN",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "money: Infinity rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "Infinity",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "money: scale preserved",
+    "contract": "normalized-product",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "0.00000100",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "unknown prices: null preserved",
+    "contract": "normalized-product",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": null,
+      "retail_price": null,
+      "rrp": null,
+      "currency": null,
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "identifier: JSON number rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": 1821,
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4000",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "identifier: leading zeros preserved",
+    "contract": "normalized-product",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4000",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "unknown mandatory value: missing rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "v2 rejected by v1",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v2",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4000",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "unexpected field rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4000",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ],
+      "extra": "unregistered"
+    }
+  },
+  {
+    "name": "confidence: absent stays absent",
+    "contract": "field-evidence",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null
+    }
+  },
+  {
+    "name": "confidence: unknown remains null",
+    "contract": "field-evidence",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null,
+      "extraction_score": null
+    }
+  },
+  {
+    "name": "confidence: score must have type",
+    "contract": "field-evidence",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null,
+      "extraction_score": {
+        "value": 0.8
+      }
+    }
+  },
+  {
+    "name": "confidence: uncalibrated label retained",
+    "contract": "field-evidence",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null,
+      "extraction_score": {
+        "value": 0.8,
+        "score_type": "layout_heuristic"
+      }
+    }
+  },
+  {
+    "name": "confidence: out of range rejected",
+    "contract": "field-evidence",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null,
+      "extraction_score": {
+        "value": 1.01,
+        "score_type": "provider_reported"
+      }
+    }
+  },
+  {
+    "name": "provenance: locator required",
+    "contract": "field-evidence",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": null,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null
+    }
+  },
+  {
+    "name": "provenance: page/polygon accepted",
+    "contract": "field-evidence",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": 17,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            1,
+            4
+          ]
+        ],
+        "coordinate_system": "page_points"
+      },
+      "artifact": null
+    }
+  },
+  {
+    "name": "provenance: polygon coordinate system required",
+    "contract": "field-evidence",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "6.4000",
+      "locator": {
+        "page": 17,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "coordinate_system": null
+      },
+      "artifact": null
+    }
+  },
+  {
+    "name": "file: malformed hash rejected",
+    "contract": "extraction-request",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "object": {
+        "bucket": "source-files",
+        "object_key": "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/source.csv"
+      },
+      "sha256": "not-a-hash",
+      "media_type": "text/csv",
+      "page_selection": [],
+      "sheet_selection": [],
+      "mapping_profile_id": null,
+      "config": {
+        "bucket": "job-config",
+        "object_key": "fixture.json"
+      }
+    }
+  },
+  {
+    "name": "file: arbitrary fetch URL rejected",
+    "contract": "extraction-request",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "object": {
+        "bucket": "source-files",
+        "object_key": "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/source.csv"
+      },
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "text/csv",
+      "page_selection": [],
+      "sheet_selection": [],
+      "mapping_profile_id": null,
+      "config": {
+        "bucket": "job-config",
+        "object_key": "fixture.json"
+      },
+      "url": "https://example.com"
+    }
+  },
+  {
+    "name": "selection: zero-based pages rejected",
+    "contract": "extraction-request",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "object": {
+        "bucket": "source-files",
+        "object_key": "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/source.csv"
+      },
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "text/csv",
+      "page_selection": [
+        0
+      ],
+      "sheet_selection": [],
+      "mapping_profile_id": null,
+      "config": {
+        "bucket": "job-config",
+        "object_key": "fixture.json"
+      }
+    }
+  },
+  {
+    "name": "completion: partial extraction labeled incomplete",
+    "contract": "extraction-result",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "incomplete",
+        "total_units": 2,
+        "completed_units": 1,
+        "pending_units": [
+          2
+        ],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "6.4000",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "completion: pending page cannot claim complete",
+    "contract": "extraction-result",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": 2,
+        "completed_units": 1,
+        "pending_units": [
+          2
+        ],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "6.4000",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "completion: failed page cannot claim complete",
+    "contract": "extraction-result",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": 1,
+        "completed_units": 1,
+        "pending_units": [],
+        "failed_units": [
+          1
+        ]
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "6.4000",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "completion: unknown total cannot claim complete",
+    "contract": "extraction-result",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": null,
+        "completed_units": 1,
+        "pending_units": [],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "6.4000",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "completion: count mismatch cannot claim complete",
+    "contract": "extraction-result",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": 2,
+        "completed_units": 1,
+        "pending_units": [],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "6.4000",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "completion: completed count exceeds total rejected",
+    "contract": "extraction-result",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": 1,
+        "completed_units": 2,
+        "pending_units": [],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "6.4000",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "raw extraction: numeric commercial token rejected",
+    "contract": "extraction-result",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": 1,
+        "completed_units": 1,
+        "pending_units": [],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": 6.4,
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "name": "job: unknown denominator accepted",
+    "contract": "job-status",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "state": "running",
+      "stage": null,
+      "completed_units": 7,
+      "total_units": null,
+      "failure_code": null
+    }
+  },
+  {
+    "name": "job: count exceeds total rejected",
+    "contract": "job-status",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "state": "queued",
+      "stage": null,
+      "completed_units": 2,
+      "total_units": 1,
+      "failure_code": null
+    }
+  },
+  {
+    "name": "job: failure needs safe error code",
+    "contract": "job-status",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "state": "failed",
+      "stage": null,
+      "completed_units": 0,
+      "total_units": null,
+      "failure_code": null
+    }
+  },
+  {
+    "name": "flags: price and description independent",
+    "contract": "comparison-outcome",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": "11111111-1111-4111-8111-111111111111",
+      "new_record_id": "22222222-2222-4222-8222-222222222222",
+      "outcome": "changed",
+      "review_state": "not_required",
+      "change_flags": [
+        "price_increase",
+        "description"
+      ],
+      "cost_delta": "0.7000",
+      "cost_change_percent": "10.9375",
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "result: missing both sides rejected",
+    "contract": "comparison-outcome",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": null,
+      "new_record_id": null,
+      "outcome": "changed",
+      "review_state": "not_required",
+      "change_flags": [
+        "price_increase",
+        "description"
+      ],
+      "cost_delta": "0.7000",
+      "cost_change_percent": "10.9375",
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "result: new requires no old record",
+    "contract": "comparison-outcome",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": "11111111-1111-4111-8111-111111111111",
+      "new_record_id": "22222222-2222-4222-8222-222222222222",
+      "outcome": "new",
+      "review_state": "not_required",
+      "change_flags": [
+        "price_increase",
+        "description"
+      ],
+      "cost_delta": "0.7000",
+      "cost_change_percent": "10.9375",
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "result: absent retains old record",
+    "contract": "comparison-outcome",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": "11111111-1111-4111-8111-111111111111",
+      "new_record_id": null,
+      "outcome": "absent",
+      "review_state": "not_required",
+      "change_flags": [],
+      "cost_delta": null,
+      "cost_change_percent": null,
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "flags: unchanged cannot have changes",
+    "contract": "comparison-outcome",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": "11111111-1111-4111-8111-111111111111",
+      "new_record_id": "22222222-2222-4222-8222-222222222222",
+      "outcome": "unchanged",
+      "review_state": "not_required",
+      "change_flags": [
+        "price_increase",
+        "description"
+      ],
+      "cost_delta": "0.7000",
+      "cost_change_percent": "10.9375",
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "flags: duplicate flag rejected",
+    "contract": "comparison-outcome",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": "11111111-1111-4111-8111-111111111111",
+      "new_record_id": "22222222-2222-4222-8222-222222222222",
+      "outcome": "changed",
+      "review_state": "not_required",
+      "change_flags": [
+        "description",
+        "description"
+      ],
+      "cost_delta": "0.7000",
+      "cost_change_percent": "10.9375",
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "delta: binary number rejected",
+    "contract": "comparison-outcome",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "result_id": "11111111-1111-4111-8111-111111111111",
+      "old_record_id": "11111111-1111-4111-8111-111111111111",
+      "new_record_id": "22222222-2222-4222-8222-222222222222",
+      "outcome": "changed",
+      "review_state": "not_required",
+      "change_flags": [
+        "price_increase",
+        "description"
+      ],
+      "cost_delta": 0.7,
+      "cost_change_percent": "10.9375",
+      "old_margin_percent": null,
+      "new_margin_percent": null,
+      "margin_point_delta": null,
+      "calculation_issues": []
+    }
+  },
+  {
+    "name": "money: trailing newline rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4000\n",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "identifier: UUID trailing newline rejected",
+    "contract": "normalized-product",
+    "valid": false,
+    "payload": {
+      "schema_version": "v1",
+      "record_id": "11111111-1111-4111-8111-111111111111\n",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "supplier_sku": "001821",
+      "normalized_supplier_sku": "001821",
+      "description": "Fixture component",
+      "manufacturer": null,
+      "manufacturer_part_number": "00017",
+      "gtin": "0012345678905",
+      "pack_quantity": "1",
+      "unit": "each",
+      "cost_price": "6.4000",
+      "retail_price": null,
+      "rrp": null,
+      "currency": "GBP",
+      "price_basis": "unit",
+      "tax_basis": "net",
+      "availability": null,
+      "validation_issues": [],
+      "evidence_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  },
+  {
+    "name": "evidence: blank raw source text preserved",
+    "contract": "field-evidence",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "evidence_id": "11111111-1111-4111-8111-111111111111",
+      "record_id": "11111111-1111-4111-8111-111111111111",
+      "source_file_id": "22222222-2222-4222-8222-222222222222",
+      "field_name": "cost_price",
+      "raw_text": "",
+      "locator": {
+        "page": null,
+        "sheet": null,
+        "row": 2,
+        "column": "cost",
+        "table": null,
+        "cell": null,
+        "bounding_polygon": null,
+        "coordinate_system": null
+      },
+      "artifact": null
+    }
+  },
+  {
+    "name": "raw extraction: blank source cell preserved",
+    "contract": "extraction-result",
+    "valid": true,
+    "payload": {
+      "schema_version": "v1",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "file_id": "22222222-2222-4222-8222-222222222222",
+      "job_id": "11111111-1111-4111-8111-111111111111",
+      "provider": {
+        "provider": "fixture-parser",
+        "sdk_version": "fixture-1",
+        "model_version": null,
+        "config_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "raw_artifact": {
+        "bucket": "extraction",
+        "object_key": "fixture.json"
+      },
+      "completion": {
+        "state": "complete",
+        "total_units": 1,
+        "completed_units": 1,
+        "pending_units": [],
+        "failed_units": []
+      },
+      "records": [
+        {
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "raw_cells": [
+            {
+              "column_name": "cost",
+              "value": "",
+              "evidence_id": "11111111-1111-4111-8111-111111111111"
+            }
+          ],
+          "semantic_candidates": {
+            "cost_price": "6.4000",
+            "supplier_sku": "001821"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "schema_version": "v1",
+          "evidence_id": "11111111-1111-4111-8111-111111111111",
+          "record_id": "11111111-1111-4111-8111-111111111111",
+          "source_file_id": "22222222-2222-4222-8222-222222222222",
+          "field_name": "cost_price",
+          "raw_text": "6.4000",
+          "locator": {
+            "page": null,
+            "sheet": null,
+            "row": 2,
+            "column": "cost",
+            "table": null,
+            "cell": null,
+            "bounding_polygon": null,
+            "coordinate_system": null
+          },
+          "artifact": null
+        }
+      ],
+      "warnings": []
+    }
+  }
+]

@@ -1,0 +1,265 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://contracts.stockshift.invalid/v1/comparison-outcome.schema.json",
+  "title": "ComparisonOutcome",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "v1",
+      "type": "string"
+    },
+    "result_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "old_record_id": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/Uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "new_record_id": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/Uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "unchanged",
+        "changed",
+        "new",
+        "absent",
+        "needs_review"
+      ]
+    },
+    "review_state": {
+      "enum": [
+        "not_required",
+        "pending",
+        "approved",
+        "rejected"
+      ]
+    },
+    "change_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "price_increase",
+          "price_decrease",
+          "description",
+          "supplier_sku",
+          "manufacturer_part_number",
+          "pack_quantity",
+          "unit",
+          "retail_price",
+          "rrp",
+          "availability"
+        ]
+      }
+    },
+    "cost_delta": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cost_change_percent": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "old_margin_percent": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "new_margin_percent": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "margin_point_delta": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "calculation_issues": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/definitions/Issue"
+      }
+    },
+    "matching_score": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/Score"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "result_id",
+    "old_record_id",
+    "new_record_id",
+    "outcome",
+    "review_state",
+    "change_flags",
+    "cost_delta",
+    "cost_change_percent",
+    "old_margin_percent",
+    "new_margin_percent",
+    "margin_point_delta",
+    "calculation_issues"
+  ],
+  "anyOf": [
+    {
+      "properties": {
+        "old_record_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "old_record_id"
+      ]
+    },
+    {
+      "properties": {
+        "new_record_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "new_record_id"
+      ]
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "new"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "properties": {
+          "old_record_id": {
+            "type": "null"
+          },
+          "new_record_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "absent"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "properties": {
+          "old_record_id": {
+            "type": "string"
+          },
+          "new_record_id": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "enum": [
+              "unchanged",
+              "changed"
+            ]
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "properties": {
+          "old_record_id": {
+            "type": "string"
+          },
+          "new_record_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "unchanged"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "properties": {
+          "change_flags": {
+            "type": "array",
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

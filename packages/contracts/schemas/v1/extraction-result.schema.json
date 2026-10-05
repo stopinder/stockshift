@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://contracts.stockshift.invalid/v1/extraction-result.schema.json",
+  "title": "ExtractionResult",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "v1",
+      "type": "string"
+    },
+    "tenant_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "file_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "job_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "provider": {
+      "$ref": "common.schema.json#/definitions/VersionMetadata"
+    },
+    "raw_artifact": {
+      "$ref": "common.schema.json#/definitions/ObjectReference"
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "complete",
+            "incomplete"
+          ]
+        },
+        "total_units": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completed_units": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending_units": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true
+        },
+        "failed_units": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "total_units",
+        "completed_units",
+        "pending_units",
+        "failed_units"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "complete"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "total_units": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "pending_units": {
+                "type": "array",
+                "maxItems": 0
+              },
+              "failed_units": {
+                "type": "array",
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "record_id": {
+            "$ref": "common.schema.json#/definitions/Uuid"
+          },
+          "raw_cells": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "column_name": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "evidence_id": {
+                  "$ref": "common.schema.json#/definitions/Uuid"
+                }
+              },
+              "required": [
+                "column_name",
+                "value",
+                "evidence_id"
+              ]
+            }
+          },
+          "semantic_candidates": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "record_id",
+          "raw_cells",
+          "semantic_candidates"
+        ]
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "field-evidence.schema.json"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/definitions/Issue"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "file_id",
+    "job_id",
+    "provider",
+    "raw_artifact",
+    "completion",
+    "records",
+    "evidence",
+    "warnings"
+  ]
+}

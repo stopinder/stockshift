@@ -1,0 +1,256 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://contracts.stockshift.invalid/v1/field-evidence.schema.json",
+  "title": "FieldEvidence",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "v1",
+      "type": "string"
+    },
+    "evidence_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "record_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "source_file_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "field_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "raw_text": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sheet": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "row": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "column": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "table": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cell": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bounding_polygon": {
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 3,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coordinate_system": {
+          "anyOf": [
+            {
+              "enum": [
+                "page_pixels",
+                "page_points",
+                "normalized"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "page",
+        "sheet",
+        "row",
+        "column",
+        "table",
+        "cell",
+        "bounding_polygon",
+        "coordinate_system"
+      ],
+      "anyOf": [
+        {
+          "properties": {
+            "page": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "page"
+          ]
+        },
+        {
+          "properties": {
+            "row": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "row"
+          ]
+        },
+        {
+          "properties": {
+            "bounding_polygon": {
+              "type": "array"
+            }
+          },
+          "required": [
+            "bounding_polygon"
+          ]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "bounding_polygon": {
+                "type": "array"
+              }
+            },
+            "required": [
+              "bounding_polygon"
+            ]
+          },
+          "then": {
+            "properties": {
+              "coordinate_system": {
+                "type": "string"
+              },
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "bounding_polygon": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "bounding_polygon"
+            ]
+          },
+          "then": {
+            "properties": {
+              "coordinate_system": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/ObjectReference"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "extraction_score": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/Score"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "record_id",
+    "source_file_id",
+    "field_name",
+    "raw_text",
+    "locator",
+    "artifact"
+  ]
+}

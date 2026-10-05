@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://contracts.stockshift.invalid/v1/normalized-product.schema.json",
+  "title": "NormalizedProduct",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "v1",
+      "type": "string"
+    },
+    "record_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "source_file_id": {
+      "$ref": "common.schema.json#/definitions/Uuid"
+    },
+    "supplier_sku": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "normalized_supplier_sku": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "manufacturer": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "manufacturer_part_number": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "gtin": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "pack_quantity": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cost_price": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "retail_price": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rrp": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/definitions/DecimalString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Z]{3}(?![\\s\\S])"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "price_basis": {
+      "anyOf": [
+        {
+          "enum": [
+            "unit",
+            "pack"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tax_basis": {
+      "anyOf": [
+        {
+          "enum": [
+            "net",
+            "gross"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "availability": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "validation_issues": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/definitions/Issue"
+      }
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/definitions/Uuid"
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "record_id",
+    "source_file_id",
+    "supplier_sku",
+    "normalized_supplier_sku",
+    "description",
+    "manufacturer",
+    "manufacturer_part_number",
+    "gtin",
+    "pack_quantity",
+    "unit",
+    "cost_price",
+    "retail_price",
+    "rrp",
+    "currency",
+    "price_basis",
+    "tax_basis",
+    "availability",
+    "validation_issues",
+    "evidence_ids"
+  ]
+}
