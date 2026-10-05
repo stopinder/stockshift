@@ -2,7 +2,8 @@
 
 `stockshift_worker.domain.csv_engine` provides `CsvOptions`, `parse_csv`,
 `reconcile`, and `export_changed`. No cloud credentials or new dependencies are
-needed. The worker CLI still runs the no-op queue scaffold; it does not process jobs.
+needed. The worker CLI processes durable local jobs when invoked with `--once`
+or `--poll`; its default command remains a credential-free smoke check.
 
 From `services/worker`, run the following with `uv run --locked python`:
 
@@ -108,8 +109,80 @@ prefixed with an apostrophe. This deliberate text transformation protects common
 spreadsheet imports; decimal columns remain exact numeric text. Consumers should
 import SKU columns as text to retain leading zeros in spreadsheet applications.
 
-This is an in-memory local engine, not a durable job handler. There are no database
-writes, streaming catalogue persistence, human-review resolution, custom export
+The engine itself remains in memory; the job adapter below persists its output.
+There is no streaming catalogue persistence, human-review resolution, custom export
 profiles, or large-file performance claims. Callers must not mutate validated
 products/outcomes to bypass review. See the shared synthetic corpus README and
 `tests/test_csv_engine.py` for reproducible expectations.
+
+## Durable local worker
+
+After installing the locked Python workspace, start and reset the local stack from
+the repository root with `npm run supabase:local -- start` and
+`npm run supabase:local -- db reset --local`. Set only
+`STOCKSHIFT_LOCAL_SUPABASE_URL` (`http://127.0.0.1:54321`) and
+`STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY` from that newly started local stack.
+The worker does not load `.env`, standard `SUPABASE_*` credentials, arbitrary
+connection strings or hosted URLs. Redirects are forbidden. Do not expose the key
+to a browser. There are no hosted startup instructions in this increment.
+
+From `services/worker`:
+
+```sh
+uv run --locked stockshift-worker --once
+uv run --locked stockshift-worker --poll --poll-interval 2
+```
+
+The default command without those flags remains a no-network smoke check. A local
+owner/editor enqueues via `enqueue_comparison_job(p_tenant,p_comparison,p_key,
+p_current_options,p_incoming_options,p_max_attempts)` using their authenticated
+token. Both options objects use the explicit `CsvOptions` fields shown above.
+Both comparison sides must reference ready same-tenant CSV uploads. Enqueue
+snapshots the file IDs/settings; reuse of a tenant idempotency key with different
+inputs/settings/retry policy is rejected. A new key creates a new immutable run.
+The browser has no direct job/result mutation grants and cannot call worker RPCs.
+
+Polling uses `FOR UPDATE SKIP LOCKED` to claim one eligible job. Each attempt gets
+a fresh token and a 120-second lease; a background heartbeat renews it every
+30 seconds. Claim transactions end before parsing/downloading. Every load,
+heartbeat, failure and completion checks tenant, worker and unexpired token.
+Expired attempts become `expired`; the next poll reclaims the job with a new
+token, fencing the abandoned process. Even without another execution, an expired
+last attempt becomes `dead_letter` on the next poll.
+
+Execution is **at least once**. The worker rechecks size and SHA-256, parses both
+CSV inputs with the frozen settings, and calls the existing deterministic engine.
+All results/candidates, run completion, attempt success and job success commit in
+one transaction. No partial outputs are published on a validation error. Result
+IDs are deterministic within a run, and `(run,source_result_id)` is unique.
+Repeating completion with the same winning token and canonical JSON payload
+returns success; changed payloads and stale tokens fail. A crash or lost HTTP
+reply cannot create duplicate outputs. There is no exactly-once execution claim.
+
+Transient network/service errors retry after 5, 10, 20... seconds (capped at 300),
+with three attempts by default and an enqueue limit of 1–10. Invalid CSV/settings
+or integrity failures are terminal `failed`; retry exhaustion is `dead_letter`.
+Attempts and jobs retain structured code/stage/message/retryability details without
+logging input contents, credentials or HTTP bodies. A heartbeat failure prevents
+publication. If failure recording is unavailable, lease expiry provides recovery.
+Terminal jobs are inspectable; there is no manual retry UI/API or external dispatcher.
+
+Results store the primary outcome, independent flags, complete old/new normalized
+values, exact decimal text plus PostgreSQL `numeric`, calculation/compatibility
+issues, and cell evidence (file/record/row/column/raw text). Percentages explicitly
+distinguish `defined`, `zero_old_cost` and `not_comparable`. Review outcomes create
+pending candidates with their available exact-SKU pair or an unpaired record and
+reasons; missing counterparts and confidence scores stay null. No fuzzy proposals
+or automatic review approvals are introduced.
+
+Bounds: UTF-8 CSV, 10 MiB per source, 20,000 outcomes per run and a 32 MiB RPC
+payload/response cap. Output is published as one transaction; larger jobs need a
+future batching design. There is no hosted worker deployment, cancellation,
+streaming checkpoint, cleanup, review UI, OCR/PDF/XLSX or export job in this increment.
+The host poller supplies recovery; stopping every poller stops dispatch/reclaim.
+
+`npm run test:local` executes the native SQL suites and real Auth/Storage/Python
+integration, including the 100-outcome fixture and abandoned-lease recovery. It
+requires the installed `services/worker/.venv`. Test fixtures are synthetic and
+remain locally until reset. Python unit tests use a fake gateway, while final
+database verification uses Docker-backed Supabase, never PGlite.

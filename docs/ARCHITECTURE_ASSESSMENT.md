@@ -211,6 +211,19 @@ Test two tenants and every role for read/write denial, cross-tenant foreign keys
 
 ## 6. Durable background processing
 
+**Increment 4 implementation (October 5, 2026):** the local CSV slice now uses
+PostgreSQL jobs/attempts, immutable comparison input/settings snapshots, run-scoped
+results and pending review candidates. Authenticated owner/editor enqueue is
+tenant-constrained. Service-only worker RPCs claim with `SKIP LOCKED`, issue fenced
+120-second leases, heartbeat every 30 seconds, and atomically publish outputs.
+Expired leases recover on polling; transient failures use bounded exponential
+retry, and exhausted attempts become inspectable dead letters. The Python CLI
+supports local `--once`/`--poll`, verifies registered blob bytes/hash, executes the
+existing CSV engine and persists exact values/provenance. Final verification uses
+Docker-backed local Supabase. See `services/worker/README.md` for concrete commands,
+limits and state transitions. The broader extraction/export/dispatcher/cancellation
+architecture below remains a future design, outside this increment.
+
 Start with a Postgres-backed `jobs` table rather than an additional broker. Use at-least-once execution with idempotent commits; do not promise exactly-once execution.
 
 1. API finalizes a Storage upload after validation and creates the file/input reference and initial job in a transaction. Job kinds are `extract`, `normalize`, `reconcile`, `export`, and `cleanup`. Use CPU/GPU capability tags for dispatch.

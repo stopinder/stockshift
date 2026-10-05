@@ -30,10 +30,10 @@ The application should accept current/internal catalogues and new supplier files
 
 ## Current status
 
-The production foundation, local deterministic Python CSV engine, and local-only
-Supabase tenant/private-upload foundations are implemented.
+The production foundation, deterministic Python CSV engine, local Supabase uploads,
+and durable local CSV jobs with result persistence are implemented.
 The existing private CSV MVP is not present. The web app remains a setup page and
-the Python CLI remains a no-op queue scaffold. The local engine parses explicitly
+the Python CLI can poll and execute local CSV jobs. The engine parses explicitly
 configured CSV files, validates v1 products/evidence, reconciles exact SKUs, and
 exports approved changed products. There are no browser uploads/comparisons,
 connected hosted services, billing, XLSX/PDF parsers, or OCR models yet.
@@ -46,10 +46,10 @@ server upload lifecycle, local-only safety rules and real local stack checks.
 
 - `apps/web`: Vue 3 + Vite + TypeScript + Tailwind shell, built for Vercel.
 - `packages/contracts`: canonical v1 JSON Schemas, generated TypeScript types and runtime validation.
-- `services/worker`: installable Python worker scaffold, offline contract validation and `DocumentExtractor` protocol.
+- `services/worker`: installable local CSV job worker, offline contract validation and `DocumentExtractor` protocol.
 - `tests/fixtures/contracts`: synthetic boundary fixtures shared by both language test suites.
 - `apps/web/server` and `api/uploads.ts`: local-only authenticated upload intent/finalization; no browser flow.
-- `supabase`: local configuration, seven-table migration and embedded PostgreSQL RLS/security tests.
+- `supabase`: local configuration, twelve-table schema and native PostgreSQL RLS/job/security tests.
 - `.github/workflows/ci.yml`: locked installs, schema drift, typechecks, JS/database/Python tests, builds and CPU image smoke check.
 
 Python will own parsing, normalization, matching, decimal calculations and export generation.
@@ -60,9 +60,10 @@ The browser will display results; Vercel will authorize and orchestrate work. Se
 ## Local setup
 
 Use Node `22.21.0` (see `.nvmrc`), npm `10.9.4`, Python `3.11.3` and uv `0.12.23`.
-Dependencies are pinned in manifests and both lockfiles. Tests and the web shell need
-no credentials, database service, GPU or environment variables. The optional local
-upload endpoint needs user-configured keys from a new local stack only. `.env.example` lists names;
+Dependencies are pinned in manifests and both lockfiles. Unit tests and the web shell
+need no credentials, database service or GPU. Native integration tests need Docker
+and a freshly reset local Supabase stack. The upload endpoint and job worker need
+user-configured keys from that local stack only. `.env.example` lists names;
 never put a server key in a `VITE_` variable.
 
 From the repository root:
@@ -92,7 +93,8 @@ uv run --locked python -c "from stockshift_worker.extraction.base import Documen
 uv build --no-sources
 ```
 
-The CLI prints its scaffold status and exits; it does not start a queue consumer.
+The default CLI prints readiness and exits. Use `stockshift-worker --once` or
+`--poll` with local-only configuration to process durable jobs; see the worker guide.
 uv uses `.python-version` and may obtain that interpreter if it is missing. uv itself
 is a development tool, not a worker runtime dependency. If it is not installed,
 a repository-local bootstrap on Windows is:
@@ -131,9 +133,8 @@ The web app manifest repeats the root Node `>=22.12.0 <23` and npm `>=10 <11`
 engines so Vercel selects Node 22.x from its project root. Node 22 uses npm 10 on
 Vercel; both manifests declare `npm@10.9.4`. Local development and CI use Node
 `22.21.0` from `.nvmrc`; `engine-strict=true` continues to reject incompatible tools.
-The upload endpoint exists but is restricted to a local Supabase API. No live
-deployment exists. A preview deployment will
-verify platform routing/workspace behavior when deployment is authorized later.
+The web shell is deployed; the upload endpoint and CSV worker remain restricted
+to the local Supabase API. This increment performs no hosted operations.
 
 With Docker available, from the repository root:
 
@@ -143,8 +144,8 @@ docker run --rm stockshift-worker:local
 ```
 
 The CPU image installs locked runtime dependencies, includes packaged schemas and runs
-as a non-root user. It has no processing provider or network connection in its entrypoint.
-The current Docker command exits after the no-op smoke message; it is not a running service.
+as a non-root user. Its default entrypoint exits after a credential-free smoke message.
+The local worker runs on the host; the container smoke check does not connect to Supabase.
 
 ## CSV implementation
 
@@ -158,13 +159,15 @@ The web shell continues to describe its own pending upload/comparison workflow.
 
 ## Current implementation increment
 
-`feat: add Supabase foundations and private upload lifecycle`
+`feat: add durable background jobs and result persistence`
 
-Tenant/schema/private-storage foundations and server upload operations are local
-only. `npm run check` includes the existing contracts, server lifecycle tests,
-embedded PostgreSQL migration/RLS tests, types and production shell build.
-The Docker-backed local Supabase stack has been verified with migration reset,
-32 native database/security tests, eight Auth/Storage HTTP tests and database lint.
-Run `npm run test:local` after starting and resetting the local stack. Hosted projects must not be
-accessed without separate approval as specified in the local Supabase guide.
-Durable job execution (Increment 4) has not been started.
+Jobs snapshot explicit CSV settings and ready comparison inputs. Workers claim
+leases, renew them, verify source bytes, reconcile, and atomically publish normalized
+results and pending review candidates. Lease expiry permits recovery; stale tokens
+cannot publish. Enqueue and completion are idempotent, with bounded retries and
+inspectable failed/dead-letter jobs. See [the worker lifecycle guide](services/worker/README.md).
+
+Run `npm run test:local` after installing the Python worker and starting/resetting
+local Supabase. It runs native SQL security/job tests plus real Auth/Storage/Python
+worker integration. CI uses this Docker-backed path. Hosted projects must not be
+accessed without separate approval. There is no persistent review UI yet.

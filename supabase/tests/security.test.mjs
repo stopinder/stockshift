@@ -96,10 +96,10 @@ before(async () => {
 })
 after(async () => { await db.exec('rollback'); await db.close() })
 
-check('migrations create exactly seven RLS-protected public tables', async () => {
+check('migrations create exactly twelve RLS-protected public tables', async () => {
   const tables = await rows(`select relname, relrowsecurity from pg_class c join pg_namespace n
     on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' order by relname`)
-  assert.equal(tables.length, 7)
+  assert.equal(tables.length, 12)
   assert.ok(tables.every(table => table.relrowsecurity))
 })
 for (const table of ['tenants', 'tenant_memberships', 'suppliers', 'source_files',

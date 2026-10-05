@@ -1,6 +1,8 @@
 // Explicit local integration runner; never reads hosted credentials or URLs.
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { randomUUID, createHash } from 'node:crypto'
 import { before, after, test } from 'node:test'
 import { createClient } from '@supabase/supabase-js'
@@ -138,4 +140,97 @@ test('actual unsupported bytes fail verification and never become ready', async 
     { tenantId: A, fileId: file.fileId }), { status: 422 })
   const row = await db.query('select status, sha256 from public.source_files where id=$1', [file.fileId])
   assert.deepEqual(row.rows[0], { status: 'failed', sha256: null })
+})
+
+const csvOptions = { encoding:'utf-8-sig',delimiter:',',decimal_separator:'.',
+  columns:{supplier_sku:'SKU',cost_price:'Price',description:'Description'},
+  currency:'GBP',pack_quantity:'1',unit:'each',price_basis:'unit',tax_basis:'net' }
+async function enqueueCsvPair(current: Buffer, incoming: Buffer, options = csvOptions) {
+  const files = []
+  for (const [index, content] of [current,incoming].entries()) {
+    const file = await createUploadIntent(gateway, users.editor!.token,
+      { tenantId:A,filename:`side${index}.csv`,byteCount:content.length })
+    assert.ifError((await users.editor!.client.storage.from(bucket).uploadToSignedUrl(file.path,
+      file.token, content, { contentType:'text/csv' })).error)
+    await finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:file.fileId})
+    files.push(file.fileId)
+  }
+  const comp = await users.editor!.client.from('comparisons').insert({tenant_id:A,title:'Worker test'}).select().single()
+  assert.ifError(comp.error)
+  assert.ifError((await users.editor!.client.from('comparison_files').insert([
+    {tenant_id:A,comparison_id:comp.data.id,source_file_id:files[0],side:'current'},
+    {tenant_id:A,comparison_id:comp.data.id,source_file_id:files[1],side:'incoming'},
+  ])).error)
+  const result = await users.editor!.client.rpc('enqueue_comparison_job',{
+    p_tenant:A,p_comparison:comp.data.id,p_key:randomUUID(),
+    p_current_options:options,p_incoming_options:options,
+  })
+  assert.ifError(result.error)
+  return result.data
+}
+function executeWorker() {
+  const python = resolve('services/worker/.venv', process.platform==='win32'?'Scripts/python.exe':'bin/python')
+  const result = spawnSync(python,['-m','stockshift_worker.entrypoints.cli','--once'],{
+    env:{...env,STOCKSHIFT_LOCAL_SUPABASE_URL:url,STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY:config.secretKey},
+    encoding:'utf8',timeout:60000,
+  })
+  assert.equal(result.status,0,`Local worker failed: ${result.stderr}`)
+}
+test('real Python worker processes the golden CSV fixture into 100 persisted results and two pending candidates',async()=>{
+  const job = await enqueueCsvPair(readFileSync('tests/fixtures/csv/old_catalogue.csv'),
+    readFileSync('tests/fixtures/csv/new_supplier_catalogue.csv'))
+  executeWorker()
+  const state=(await db.query('select status,attempt_count from public.jobs where id=$1',[job.id])).rows[0]
+  assert.deepEqual(state,{status:'succeeded',attempt_count:1})
+  const counts=(await db.query(`select primary_outcome,count(*)::int as n from public.comparison_results
+    where comparison_run_id=$1 group by primary_outcome`,[job.comparison_run_id])).rows
+  assert.deepEqual(Object.fromEntries(counts.map(r=>[r.primary_outcome,r.n])),
+    {unchanged:50,changed:30,new:10,absent:8,needs_review:2})
+  const review=(await db.query('select status,basis from public.match_candidates where comparison_run_id=$1',[job.comparison_run_id])).rows
+  assert.equal(review.length,2);assert.ok(review.every(r=>r.status==='pending'&&r.basis==='unpaired_review'))
+  const provenance=(await db.query(`select old_values,provenance from public.comparison_results
+    where comparison_run_id=$1 and old_values is not null limit 1`,[job.comparison_run_id])).rows[0]
+  assert.ok(provenance.provenance.length>0)
+  assert.ok(provenance.provenance.some((e: {source_file_id:string})=>e.source_file_id===provenance.old_values.source_file_id))
+  executeWorker()
+  assert.equal((await db.query('select count(*)::int as n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,100)
+})
+test('real worker persists exact decimal strings and undefined percentage for zero old cost',async()=>{
+  const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n001,0.00,A\n002,1.2300,B\n'),
+    Buffer.from('SKU,Price,Description\n001,1.2500,A\n002,1.2301,B\n'))
+  executeWorker()
+  const rows=(await db.query(`select old_values,cost_delta_text,cost_delta::text,
+    cost_change_percent_text,percentage_state,reasons from public.comparison_results
+    where comparison_run_id=$1`,[job.comparison_run_id])).rows
+  const zero=rows.find(r=>r.old_values.supplier_sku==='001'),precise=rows.find(r=>r.old_values.supplier_sku==='002')
+  assert.equal(zero.cost_delta_text,'1.2500');assert.equal(zero.percentage_state,'zero_old_cost')
+  assert.equal(zero.cost_change_percent_text,null)
+  assert.ok(zero.reasons.some((r: {code:string})=>r.code==='zero_old_cost'))
+  assert.equal(precise.cost_delta_text,'0.0001');assert.equal(precise.cost_delta,'0.0001')
+})
+test('real worker persists structured terminal failure for invalid CSV mapping without publishing partial results',async()=>{
+  const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n001,2,A\n'),
+    Buffer.from('WRONG,Price,Description\n001,3,A\n'))
+  executeWorker()
+  const row=(await db.query('select status,failure_reason from public.jobs where id=$1',[job.id])).rows[0]
+  assert.equal(row.status,'failed');assert.equal(row.failure_reason.code,'invalid_csv_job')
+  assert.equal(row.failure_reason.stage,'parse');assert.equal(row.failure_reason.retryable,false)
+  assert.equal((await db.query('select count(*)::int as n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,0)
+})
+test('real worker recovers an abandoned lease and stale completion cannot duplicate output',async()=>{
+  const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n001,2,A\n'),
+    Buffer.from('SKU,Price,Description\n001,3,A\n'))
+  const abandoned=randomUUID()
+  const claimed=await admin.rpc('claim_csv_job',{p_worker:abandoned})
+  assert.ifError(claimed.error);assert.equal(claimed.data.id,job.id)
+  await db.query("update public.jobs set lease_expires_at=clock_timestamp()-interval '1 second' where id=$1",[job.id])
+  executeWorker()
+  const current=(await db.query('select status,attempt_count from public.jobs where id=$1',[job.id])).rows[0]
+  assert.deepEqual(current,{status:'succeeded',attempt_count:2})
+  const stale=await admin.rpc('complete_csv_job',{p_tenant:A,p_job:job.id,p_worker:abandoned,
+    p_token:claimed.data.lease_token,p_results:[]})
+  assert.equal(stale.error?.code,'42501')
+  assert.equal((await db.query('select count(*)::int as n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,1)
+  const attempts=(await db.query('select status from public.job_attempts where job_id=$1 order by attempt_number',[job.id])).rows
+  assert.deepEqual(attempts,[{status:'expired'},{status:'succeeded'}])
 })

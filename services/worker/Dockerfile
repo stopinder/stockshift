@@ -1,4 +1,4 @@
-# CPU scaffold only. Build with services/worker as the Docker build context.
+# CSV CPU worker. Build with services/worker as the Docker build context.
 FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 FROM python:3.11.14-slim-bookworm
 COPY --from=uv /uv /usr/local/bin/uv

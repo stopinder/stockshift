@@ -46,19 +46,25 @@ migrations.
 `npm run test:local` requires the running, freshly reset Docker-backed local stack.
 It runs the same 32 SQL security tests against PostgreSQL on `127.0.0.1:54322`,
 without the embedded Auth/Storage bootstrap or reapplying application migrations.
-SQL fixtures and test mutations are rolled back. For Storage deletion assertions,
+Foundation SQL fixtures and per-case mutations are rolled back; job/HTTP fixtures
+remain synthetic local data until reset. For Storage deletion assertions,
 the suite first verifies Supabase's direct-delete guard, then uses the Storage API's
 transaction-local delete flag to exercise RLS and the application immutability trigger.
-It also runs eight real Auth/Storage HTTP integration tests, including signed upload,
-SHA-256 finalization, retries, tenant isolation and replacement/deletion rejection.
+It also runs native durable-job SQL tests and real Auth/Storage/Python integration,
+including signed upload, SHA-256 finalization, retries, tenant isolation,
+replacement/deletion rejection, the golden CSV corpus and abandoned-lease recovery.
+Install the locked Python workspace first; the worker integration uses its `.venv`.
 These tests leave synthetic local users, tenants and blobs; a local reset clears them.
 The runner rejects linked checkouts, strips hosted credential variables, uses fixed
 loopback connections, and obtains generated local keys from local CLI status only.
 No credentials are printed or saved. PGlite is not used by this command.
 
 Verified on October 5, 2026 with Docker Desktop and local PostgreSQL 17.11:
-reset/migration passed, all 32 native SQL tests and eight HTTP tests passed, and
+the Increment 3 reset/migration, 32 native SQL tests and eight HTTP tests passed, and
 `db lint --local` reported no schema errors. No hosted project was accessed.
+Increment 4 verification reset both migrations from scratch and passed 32 foundation
+SQL tests, 20 durable-job SQL tests and 12 Auth/Storage/Python integration tests.
+The native lint again reported no schema errors; all enabled local services were healthy.
 
 ## Schema and permission model
 
@@ -66,7 +72,12 @@ One migration creates exactly seven tables: `tenants`, `tenant_memberships`,
 `suppliers`, `source_files`, `import_profiles`, `comparisons`, `comparison_files`.
 Each tenant-owned resource carries `tenant_id`; resource associations use composite
 tenant-aware foreign keys. All tables have UUID keys and creation timestamps.
-Comparisons are shells, with one ready input per side; no jobs/products/results.
+Comparisons have one ready input per side. The second migration adds `jobs`,
+`job_attempts`, `comparison_runs`, `comparison_results` and `match_candidates`.
+All five add RLS, tenant-aware references and read-only tenant browser access.
+Enqueue is constrained to current owner/editor membership; service-role worker RPCs
+use tenant/worker/token checks. Neither browsers nor service-role clients have
+direct mutation grants on these tables. See the worker guide for retry/lease semantics.
 
 All seven tables enable RLS. Live database membership grants tenant reads to
 owner/editor/viewer. Anon has no table access. Owner/editor may create/edit suppliers,
