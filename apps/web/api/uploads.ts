@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createUploadIntent, finalizeUpload, UploadError } from '../server/uploads'
-import { localConfigFromEnv, SupabaseUploadGateway } from '../server/supabase-upload-gateway'
+import { createUploadIntent, finalizeUpload, UploadError } from '../server/uploads.ts'
+import { localConfigFromEnv, SupabaseUploadGateway } from '../server/supabase-upload-gateway.ts'
 
-// Vercel parses JSON bodies. Browser shell intentionally has no upload/auth flow.
+// Vercel parses JSON bodies; local Vite middleware provides the same request contract.
 export default async function handler(req: IncomingMessage & { body?: unknown }, res: ServerResponse) {
   res.setHeader('Cache-Control', 'no-store')
   res.setHeader('Content-Type', 'application/json')

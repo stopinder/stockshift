@@ -22,11 +22,10 @@ npm run test:local
 ```
 
 `start`/`reset`/`lint` require Docker Desktop or Podman. Reset affects the
-`stockshift-local` local development database only. There are no application seeds
-or real users. An administrator of that local database must create initial tenants
-and owner memberships for locally registered `auth.users`; signup provisioning is
-outside this increment. Supabase Auth is the identity provider; no password table
-or browser authentication flow is added.
+`stockshift-local` local development database only. `npm run seed:local` creates a
+synthetic local Auth account/workspace and prints local sign-in credentials. No real
+users are seeded and public signup provisioning is outside this increment. See
+[the local browser workflow](../docs/LOCAL_CSV_WORKFLOW.md) for web/worker startup.
 
 The pinned CLI wrapper allows only specific local operations, strips credential
 environment variables from child processes, fixes the workspace explicitly and
@@ -65,6 +64,13 @@ the Increment 3 reset/migration, 32 native SQL tests and eight HTTP tests passed
 Increment 4 verification reset both migrations from scratch and passed 32 foundation
 SQL tests, 20 durable-job SQL tests and 12 Auth/Storage/Python integration tests.
 The native lint again reported no schema errors; all enabled local services were healthy.
+
+Increment 5 adds `review_events`, append-only tenant/actor-scoped rejection and
+unpaired no-match decisions, persisted-row summary/search RPCs and a tenant-authorized
+export RPC. Native verification includes 16 review/security SQL tests and six more
+HTTP export tests (18 HTTP integrations total). Unresolved reviews block export;
+worker results remain immutable. Browser-only roles cannot insert/update/delete audit
+events or approve unsupported matches. Only deterministic changed rows are exported.
 
 ## Schema and permission model
 

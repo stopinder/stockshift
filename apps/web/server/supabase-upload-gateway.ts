@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { BUCKET, UploadError, type Intent, type Role, type SourceFile, type UploadGateway } from './uploads'
+import { BUCKET, UploadError, type Intent, type Role, type SourceFile, type UploadGateway } from './uploads.ts'
 
 export interface LocalSupabaseConfig { url: string; publishableKey: string; secretKey: string }
 export function validateLocalConfig(config: LocalSupabaseConfig): LocalSupabaseConfig {

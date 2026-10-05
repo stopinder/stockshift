@@ -9,6 +9,8 @@ import { createClient } from '@supabase/supabase-js'
 import { Client } from 'pg'
 import { SupabaseUploadGateway } from '../../apps/web/server/supabase-upload-gateway'
 import { createUploadIntent, finalizeUpload } from '../../apps/web/server/uploads'
+import { createServer } from 'node:http'
+import exportHandler from '../../apps/web/server/export'
 
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
   !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_)/i.test(key)))
@@ -26,8 +28,17 @@ const A = randomUUID(), B = randomUUID()
 const users: Record<string, { id: string; token: string; client: ReturnType<typeof createClient> }> = {}
 const bytes = Buffer.from('sku,price\n001,2.50\n')
 const bucket = 'catalogue-uploads'
+const exportServer = createServer(exportHandler)
+let exportUrl = ''
 
 before(async () => {
+  Object.assign(process.env, { STOCKSHIFT_LOCAL_SUPABASE_URL: url,
+    STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY: config.publishableKey,
+    STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY: config.secretKey })
+  await new Promise<void>(resolve => exportServer.listen(0, '127.0.0.1', resolve))
+  const address = exportServer.address()
+  assert.ok(address && typeof address === 'object')
+  exportUrl = `http://127.0.0.1:${address.port}`
   await db.connect()
   for (const role of ['owner', 'editor', 'viewer', 'other']) {
     const email = `${randomUUID()}@stockshift.local`, password = randomUUID()
@@ -44,7 +55,7 @@ before(async () => {
       [role === 'other' ? B : A, users[role]!.id, role === 'other' ? 'owner' : role])
   }
 })
-after(async () => { await db.end() })
+after(async () => { await db.end(); await new Promise<void>((resolve, reject) => exportServer.close(e => e ? reject(e) : resolve())) })
 
 async function intent() {
   return createUploadIntent(gateway, users.editor!.token,
@@ -233,4 +244,56 @@ test('real worker recovers an abandoned lease and stale completion cannot duplic
   assert.equal((await db.query('select count(*)::int as n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,1)
   const attempts=(await db.query('select status from public.job_attempts where job_id=$1 order by attempt_number',[job.id])).rows
   assert.deepEqual(attempts,[{status:'expired'},{status:'succeeded'}])
+})
+
+function exportRequest(run: string, role='editor', tenant=A) {
+  return fetch(`${exportUrl}/api/export?tenant=${tenant}&run=${run}`, { headers: { Authorization: `Bearer ${users[role]!.token}` } })
+}
+test('real HTTP export is blocked until audited review, then preserves precision and protects formula text',async()=>{
+  const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n000012,0.0000,Old\n=cmd,1.2300,Safe\n,2,Missing identifier\n'),
+    Buffer.from('SKU,Price,Description\n000012,1.2500,New\n=cmd,1.2301,=formula\n,3,Missing identifier\n'))
+  executeWorker()
+  const blocked=await exportRequest(job.comparison_run_id)
+  assert.equal(blocked.status,409)
+  const reviews=await users.editor!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id,p_outcome:'needs_review'})
+  assert.ifError(reviews.error);assert.equal(reviews.data.length,2)
+  for(const row of reviews.data) {
+    const resolved=await users.editor!.client.rpc('resolve_csv_review',{p_tenant:A,p_run:job.comparison_run_id,
+      p_result:row.id,p_decision:'no_match',p_note:'Missing identifier; exclude from update'})
+    assert.ifError(resolved.error)
+  }
+  const response=await exportRequest(job.comparison_run_id)
+  assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store')
+  assert.match(response.headers.get('content-disposition')!, /changed_products\.csv/)
+  const csv=await response.text()
+  assert.ok(csv.includes('"000012"'));assert.ok(csv.includes('"0.0000","1.2500","1.2500","","zero_old_cost"'))
+  assert.ok(csv.includes('"\'=cmd"'));assert.ok(csv.includes('"\'=formula"'));assert.ok(csv.includes('"0.0001"'))
+  assert.equal(csv.split('\r\n').filter(Boolean).length,3);assert.ok(!csv.includes('Missing identifier'))
+  const reload=await users.editor!.client.rpc('csv_run_summary',{p_tenant:A,p_run:job.comparison_run_id})
+  assert.ifError(reload.error);assert.equal(reload.data.unresolved,0);assert.equal(reload.data.excluded,2)
+})
+test('real HTTP export rejects missing and invalid sessions without leaking keys',async()=>{
+  for(const headers of [{},{Authorization:'Bearer invalid-session'}]) {
+    const response=await fetch(`${exportUrl}/api/export?tenant=${A}&run=${randomUUID()}`,{headers})
+    assert.equal(response.status,401);assert.ok(!(await response.text()).includes(config.secretKey))
+  }
+})
+test('real HTTP export rejects another tenant even using a valid session',async()=>{
+  const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n01,1,A\n'),Buffer.from('SKU,Price,Description\n01,2,A\n'))
+  executeWorker()
+  assert.equal((await exportRequest(job.comparison_run_id,'other')).status,403)
+})
+test('real HTTP export supports empty completed results with header only',async()=>{
+  const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n'),Buffer.from('SKU,Price,Description\n'))
+  executeWorker();const response=await exportRequest(job.comparison_run_id)
+  assert.equal(response.status,200);assert.equal((await response.text()).split('\r\n').filter(Boolean).length,1)
+})
+test('real HTTP export rejects failed and queued runs',async()=>{
+  const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n01,1,A\n'),Buffer.from('Wrong,Price,Description\n01,2,A\n'))
+  assert.equal((await exportRequest(job.comparison_run_id)).status,409)
+  executeWorker();assert.equal((await exportRequest(job.comparison_run_id)).status,409)
+})
+test('real HTTP export rejects unsupported methods and malformed selection',async()=>{
+  assert.equal((await fetch(`${exportUrl}/api/export`,{method:'POST'})).status,405)
+  assert.equal((await fetch(`${exportUrl}/api/export?tenant=invalid&run=invalid`,{headers:{Authorization:`Bearer ${users.editor!.token}`}})).status,400)
 })

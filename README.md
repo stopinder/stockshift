@@ -30,13 +30,16 @@ The application should accept current/internal catalogues and new supplier files
 
 ## Current status
 
-The production foundation, deterministic Python CSV engine, local Supabase uploads,
-and durable local CSV jobs with result persistence are implemented.
-The existing private CSV MVP is not present. The web app remains a setup page and
-the Python CLI can poll and execute local CSV jobs. The engine parses explicitly
-configured CSV files, validates v1 products/evidence, reconciles exact SKUs, and
-exports approved changed products. There are no browser uploads/comparisons,
-connected hosted services, billing, XLSX/PDF parsers, or OCR models yet.
+The local browser CSV workflow is implemented: authenticated workspace, supplier and
+comparison creation, private uploads, background processing, persistent results,
+review exclusions and changed-products export. The Python CLI polls durable jobs;
+the browser never performs matching or decimal arithmetic. Unsupported review matches
+cannot be approved: owners/editors explicitly reject or confirm no-match to exclude
+them, with an immutable decision history. Export stays blocked until review is complete.
+The existing private CSV MVP is not present. There are no connected hosted backends,
+billing, XLSX/PDF parsers, fuzzy matching or OCR models yet.
+See [the complete local browser workflow](docs/LOCAL_CSV_WORKFLOW.md) for startup,
+sample files, import settings, review rules and browser verification.
 See [the local CSV engine guide](services/worker/README.md) for the callable API,
 numeric/review rules, fixture example, and limitations.
 See [the local Supabase guide](supabase/README.md) for migration/security checks,
@@ -44,26 +47,26 @@ server upload lifecycle, local-only safety rules and real local stack checks.
 
 ## Workspace and ownership
 
-- `apps/web`: Vue 3 + Vite + TypeScript + Tailwind shell, built for Vercel.
+- `apps/web`: Vue 3 + Vite + TypeScript + Tailwind authenticated CSV workflow, built for Vercel.
 - `packages/contracts`: canonical v1 JSON Schemas, generated TypeScript types and runtime validation.
 - `services/worker`: installable local CSV job worker, offline contract validation and `DocumentExtractor` protocol.
 - `tests/fixtures/contracts`: synthetic boundary fixtures shared by both language test suites.
-- `apps/web/server` and `api/uploads.ts`: local-only authenticated upload intent/finalization; no browser flow.
-- `supabase`: local configuration, twelve-table schema and native PostgreSQL RLS/job/security tests.
+- `apps/web/server` and `api`: local-only authenticated upload intent/finalization and trusted CSV export.
+- `supabase`: local configuration, thirteen-table schema and native PostgreSQL RLS/job/review/security tests.
 - `.github/workflows/ci.yml`: locked installs, schema drift, typechecks, JS/database/Python tests, builds and CPU image smoke check.
 
-Python will own parsing, normalization, matching, decimal calculations and export generation.
-The browser will display results; Vercel will authorize and orchestrate work. See
+Python owns parsing, normalization, matching and decimal calculations. The server
+serializes approved persisted values as CSV; the browser displays results. See
 [the architecture assessment](docs/ARCHITECTURE_ASSESSMENT.md) and
 [contract maintenance instructions](packages/contracts/README.md).
 
 ## Local setup
 
 Use Node `22.21.0` (see `.nvmrc`), npm `10.9.4`, Python `3.11.3` and uv `0.12.23`.
-Dependencies are pinned in manifests and both lockfiles. Unit tests and the web shell
-need no credentials, database service or GPU. Native integration tests need Docker
-and a freshly reset local Supabase stack. The upload endpoint and job worker need
-user-configured keys from that local stack only. `.env.example` lists names;
+Dependencies are pinned in manifests and both lockfiles. Unit tests need no
+credentials, database service or GPU. The connected app and native integration tests
+need Docker and a freshly reset local Supabase stack. Local web/worker launchers
+obtain only that stack's generated keys. `.env.example` lists names;
 never put a server key in a `VITE_` variable.
 
 From the repository root:
@@ -71,10 +74,15 @@ From the repository root:
 ```sh
 npm ci
 npm run check
-npm run dev
+npm run supabase:local -- start
+npm run seed:local
+npm run dev:local
+# In a separate terminal, after installing the worker:
+npm run worker:local
 ```
 
-The shell runs at `http://127.0.0.1:5173`. Production preview:
+The application runs at `http://127.0.0.1:5173`. Plain `npm run dev` and a production
+preview without local public configuration show the connection-required state. Production preview:
 
 ```sh
 npm run build

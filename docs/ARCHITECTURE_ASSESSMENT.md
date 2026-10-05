@@ -211,6 +211,16 @@ Test two tenants and every role for read/write denial, cross-tenant foreign keys
 
 ## 6. Durable background processing
 
+**Increment 5 implementation (October 5, 2026):** the local Vue app now supports
+authenticated tenant context, supplier/comparison creation, private verified CSV
+uploads, durable processing status, persisted result filtering and evidence inspection.
+Append-only `review_events` record explicit rejection/no-match exclusions. No human
+approval recalculates unsupported matches. Tenant-scoped RPCs compute counts from
+persisted rows and block export until all reviews are resolved; the server serializes
+only deterministic changed outcomes with decimal text and formula-safe text cells.
+See `docs/LOCAL_CSV_WORKFLOW.md`. Expanded matching, exports and hosted deployment
+described below remain future work.
+
 **Increment 4 implementation (October 5, 2026):** the local CSV slice now uses
 PostgreSQL jobs/attempts, immutable comparison input/settings snapshots, run-scoped
 results and pending review candidates. Authenticated owner/editor enqueue is

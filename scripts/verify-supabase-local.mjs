@@ -12,6 +12,7 @@ env.STOCKSHIFT_TEST_LOCAL_POSTGRES = '1'
 for (const args of [
   ['--test', 'supabase/tests/security.test.mjs'],
   ['--test', 'supabase/tests/jobs.local.mjs'],
+  ['--test', 'supabase/tests/review.local.mjs'],
   ['--import', 'tsx', '--test', 'supabase/tests/upload.local.ts'],
 ]) {
   const result = spawnSync(process.execPath, args, { cwd: root, env, stdio: 'inherit' })
