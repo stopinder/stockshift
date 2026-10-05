@@ -42,6 +42,7 @@ test("mapped XLSX commercial fields require no invented file-wide defaults", () 
     },
     "a.xlsx",
   );
+  assert.ok("currency" in options);
   assert.equal(options.currency, null);
   assert.equal(options.unit, null);
   assert.equal(options.pack_quantity, null);
@@ -59,6 +60,7 @@ test("XLSX optional fields use explicit distinct column mappings", () => {
     "book.xlsx",
   );
   assert.equal((options as { format: string }).format, "xlsx");
+  assert.ok("columns" in options);
   assert.deepEqual(options.columns, {
     supplier_sku: "SKU",
     cost_price: "Price",
@@ -179,4 +181,27 @@ test("permission and session errors stay actionable and omit database details", 
     /expired/,
   );
   assert.ok(!friendlyError({ message: "secret" }).includes("secret"));
+});
+
+test("PDF import references only a confirmed revision without invented CSV defaults", () => {
+  const revision = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  assert.deepEqual(
+    importOptions(
+      { ...defaultSettings(), pdfRevisionId: revision },
+      "catalogue.PDF",
+    ),
+    { format: "pdf", revision_id: revision },
+  );
+  assert.throws(
+    () => importOptions(defaultSettings(), "catalogue.pdf"),
+    /Confirm PDF/,
+  );
+  assert.throws(
+    () =>
+      importOptions(
+        { ...defaultSettings(), pdfRevisionId: "invalid" },
+        "catalogue.pdf",
+      ),
+    /Confirm PDF/,
+  );
 });

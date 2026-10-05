@@ -376,3 +376,17 @@ review exclusions, tenant policies and changed-products CSV export retain the sa
 contracts. A migration broadens verified source MIME/extension constraints and the
 private storage allowlist, and extends tenant-validated enqueue/load gates.
 No hosted worker, XLSX export or further matching capabilities are added.
+
+## Increment 7: digital extraction and durable corrections
+
+Digital PDF intake now uses the existing `DocumentExtractor` interface, with
+pdfplumber providing embedded text/table cells and provenance rather than semantic
+mapping. A durable extraction job precedes explicit browser mapping/correction and
+confirmation. Immutable extraction envelopes and append-only revision snapshots
+retain original values, actor/time and page geometry. A comparison snapshots a
+confirmed revision from each PDF side. Shared normalization then invokes the existing
+deterministic engine, atomic publication, review exclusions and trusted CSV export.
+No second matching or monetary engine is introduced. Unsupported/scanned material
+enters OCR-required; structurally uncertain extracted rows remain review items.
+The same envelope supports a future OCR provider without downstream reconciliation
+changes. All current deployment/startup and credentials remain local-only.

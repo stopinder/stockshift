@@ -18,7 +18,7 @@
     "worker:local": "node scripts/worker-local.mjs",
     "seed:local": "node scripts/seed-local.mjs",
     "test:browser": "playwright test --config apps/web/playwright.config.ts",
-    "format:check": "prettier --check apps/web/src apps/web/server/export.ts apps/web/server/workbook.ts apps/web/api/export.ts apps/web/api/workbook.ts apps/web/vite.config.ts apps/web/tests/workflow.test.ts apps/web/tests/workbook-endpoint.test.ts apps/web/playwright.config.ts apps/web/e2e scripts/web-local.mjs scripts/worker-local.mjs scripts/seed-local.mjs supabase/tests/review.local.mjs",
+    "format:check": "prettier --check apps/web/src apps/web/server/export.ts apps/web/server/workbook.ts apps/web/server/pdf.ts apps/web/api/export.ts apps/web/api/workbook.ts apps/web/api/pdf.ts apps/web/vite.config.ts apps/web/tests/workflow.test.ts apps/web/tests/workbook-endpoint.test.ts apps/web/tests/pdf-endpoint.test.ts apps/web/playwright.config.ts apps/web/e2e scripts/web-local.mjs scripts/worker-local.mjs scripts/seed-local.mjs supabase/tests/review.local.mjs supabase/tests/pdf.local.mjs",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces && npm run test:db",
     "test:db": "node --test supabase/tests/*.test.mjs",

@@ -30,14 +30,14 @@ The application should accept current/internal catalogues and new supplier files
 
 ## Current status
 
-The local browser CSV/XLSX workflow is implemented: authenticated workspace, supplier and
+The local browser CSV/XLSX/digital PDF workflow is implemented: authenticated workspace, supplier and
 comparison creation, private uploads, background processing, persistent results,
 review exclusions and changed-products export. The Python CLI polls durable jobs;
 the browser never performs matching or decimal arithmetic. Unsupported review matches
 cannot be approved: owners/editors explicitly reject or confirm no-match to exclude
 them, with an immutable decision history. Export stays blocked until review is complete.
 The existing private CSV MVP is not present. There are no connected hosted backends,
-billing, PDF parsers, fuzzy matching or OCR models yet.
+billing, fuzzy matching or OCR models yet. Digital PDFs now use direct text/table parsing, immutable evidence and durable correction revisions.
 See [the complete local browser workflow](docs/LOCAL_CSV_WORKFLOW.md) for startup,
 sample files, import settings, review rules and browser verification.
 See [the local CSV engine guide](services/worker/README.md) for the callable API,
@@ -47,12 +47,12 @@ server upload lifecycle, local-only safety rules and real local stack checks.
 
 ## Workspace and ownership
 
-- `apps/web`: Vue 3 + Vite + TypeScript + Tailwind authenticated CSV/XLSX workflow, built for Vercel.
+- `apps/web`: Vue 3 + Vite + TypeScript + Tailwind authenticated CSV/XLSX/PDF workflow, built for Vercel.
 - `packages/contracts`: canonical v1 JSON Schemas, generated TypeScript types and runtime validation.
-- `services/worker`: installable local CSV/XLSX job worker, offline contract validation and `DocumentExtractor` protocol.
+- `services/worker`: installable local CSV/XLSX/PDF job worker, offline contract validation and `DocumentExtractor` protocol.
 - `tests/fixtures/contracts`: synthetic boundary fixtures shared by both language test suites.
-- `apps/web/server` and `api`: local-only authenticated upload intent/finalization, Python XLSX inspection and trusted CSV export.
-- `supabase`: local configuration, thirteen-table schema and native PostgreSQL RLS/job/review/security tests.
+- `apps/web/server` and `api`: local-only authenticated upload intent/finalization, Python XLSX/PDF inspection and trusted CSV export.
+- `supabase`: local configuration, fifteen-table schema and native PostgreSQL RLS/job/review/security tests.
 - `.github/workflows/ci.yml`: locked installs, schema drift, typechecks, JS/database/Python tests, builds and CPU image smoke check.
 
 Python owns parsing, normalization, matching and decimal calculations. The server
@@ -186,3 +186,14 @@ Run `npm run test:local` after installing the Python worker and starting/resetti
 local Supabase. It runs native SQL security/job tests plus real Auth/Storage/Python
 worker integration. CI uses this Docker-backed path. Hosted projects must not be
 accessed without separate approval. There is no persistent review UI yet.
+
+## Increment 7: digital PDF ingestion and correction
+
+`feat: add digital PDF ingestion and correction workflow`
+
+Digitally generated PDFs use pdfplumber behind the existing extraction provider
+interface and durable queue. Immutable page/cell evidence, append-only correction
+revisions, explicit field mapping/confirmation and confirmed revision snapshots feed
+the existing normalization, deterministic comparison, review and CSV export. Scans
+and unsupported structures retain an actionable OCR-required state; OCR is not yet
+implemented. See [digital PDF workflow and limits](docs/LOCAL_CSV_WORKFLOW.md#digital-pdfs-increment-7).

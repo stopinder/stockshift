@@ -59,7 +59,7 @@ test('invalid auth cannot reach privileged operations', async () => {
   await assert.rejects(createUploadIntent(gateway,'expired',input), { status:401 })
   assert.deepEqual(gateway.calls,['authenticate'])
 })
-for (const filename of ['../file.csv', 'folder\\file.csv', 'https://example.test/file.csv', 'file.pdf', 'file.csv\u0000']) {
+for (const filename of ['../file.csv', 'folder\\file.csv', 'https://example.test/file.csv', 'file.docx', 'file.csv\u0000']) {
   test(`reject unsafe/unsupported filename ${JSON.stringify(filename)}`, () => {
     assert.throws(() => parseIntent({...input,filename}), { status:400 })
   })
@@ -158,4 +158,9 @@ test('SDK adapter validates user through Auth; upload signing uses user token wi
     assert.equal(requests[3]!.authorization,'Bearer valid')
     assert.notEqual(requests[3]!.upsert,'true')
   } finally { globalThis.fetch = original }
+})
+
+test('PDF filenames are accepted while paths and disguised CSV bytes remain rejected', () => {
+  assert.equal(parseIntent({ ...input, filename: 'Catalogue.PDF' }).filename, 'Catalogue.PDF')
+  assert.throws(() => verifyCsv(new TextEncoder().encode('%PDF-1.7')), { status: 422 })
 })

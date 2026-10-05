@@ -8,7 +8,9 @@ from uuid import UUID, uuid5
 
 from stockshift_worker.domain.csv_engine import CsvOptions, parse_csv, reconcile
 from stockshift_worker.domain.xlsx import MIME, WorkbookError, parse_xlsx
+from stockshift_worker.extraction.digital_pdf import PdfError, normalize_pdf
 from stockshift_worker.jobs.gateway import LeaseLost, TransportError
+from stockshift_worker.jobs.pdf import extract_job
 
 
 def result_payload(run_id, old, new):
@@ -46,17 +48,28 @@ def result_payload(run_id, old, new):
     return output
 
 
-def verified_catalogue(gateway, file, tenant, options):
+def verified_catalogue(gateway, file, tenant, options, revision=None):
     if (
         file["tenant_id"] != tenant
         or file["status"] != "ready"
-        or file["verified_mime"] not in ("text/csv", MIME)
+        or file["verified_mime"] not in ("text/csv", MIME, "application/pdf")
         or not 1 <= file["byte_count"] <= 10485760
     ):
         raise ValueError("Ready same-tenant structured file required")
     data = gateway.download(file)
     if len(data) != file["byte_count"] or sha256(data).hexdigest() != file["sha256"]:
         raise ValueError("Registered file integrity verification failed")
+    if file["verified_mime"] == "application/pdf":
+        if (
+            options.get("format") != "pdf"
+            or not revision
+            or revision.get("id") != options.get("revision_id")
+            or revision.get("tenant_id") != tenant
+        ):
+            raise PdfError("Confirmed PDF revision outside source/tenant.")
+        return normalize_pdf(
+            revision, source_file_id=file["id"], source_name=file["original_filename"]
+        )
     if file["verified_mime"] == MIME:
         return parse_xlsx(
             data, source_file_id=file["id"], source_name=file["original_filename"], options=options
@@ -107,16 +120,28 @@ def run_once(gateway, worker_id):
     stage = "load"
     try:
         with heartbeat(gateway, lease) as lost:
+            if job.get("kind") == "extract_pdf":
+                stage = "extract"
+                extract_job(gateway, job, lease, lost)
+                return True
             context = gateway.rpc("load_csv_job", **lease)
             run = context["run"]
             if run["tenant_id"] != job["tenant_id"] or run["id"] != job["comparison_run_id"]:
                 raise ValueError("Run outside job tenant")
             stage = "parse"
             old = verified_catalogue(
-                gateway, context["current"], job["tenant_id"], run["configuration"]["current"]
+                gateway,
+                context["current"],
+                job["tenant_id"],
+                run["configuration"]["current"],
+                context.get("current_revision"),
             )
             new = verified_catalogue(
-                gateway, context["incoming"], job["tenant_id"], run["configuration"]["incoming"]
+                gateway,
+                context["incoming"],
+                job["tenant_id"],
+                run["configuration"]["incoming"],
+                context.get("incoming_revision"),
             )
             if (
                 old.source_file_id != run["current_file_id"]
@@ -136,16 +161,24 @@ def run_once(gateway, worker_id):
     except Exception as exc:
         retryable = not isinstance(exc, (ValueError, TypeError, LookupError, csv.Error))
         failure = {
-            "code": "transport_unavailable"
+            "code": "pdf_timeout"
+            if isinstance(exc, TimeoutError)
+            else "invalid_pdf_job"
+            if isinstance(exc, PdfError) or job.get("kind") == "extract_pdf" and not retryable
+            else "transport_unavailable"
             if retryable
             else "invalid_xlsx_job"
             if isinstance(exc, WorkbookError)
             else "invalid_csv_job",
             "stage": stage,
-            "message": "Local transport unavailable"
+            "message": str(exc)
+            if isinstance(exc, (PdfError, TimeoutError))
+            else "Local transport unavailable"
             if retryable
             else str(exc)
             if isinstance(exc, WorkbookError)
+            else "PDF settings or extraction validation failed. Export a supported PDF or CSV/XLSX."
+            if job.get("kind") == "extract_pdf"
             else "CSV settings, input integrity or result validation failed",
             "retryable": retryable,
         }

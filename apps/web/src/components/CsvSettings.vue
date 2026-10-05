@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import type { CsvSettings } from "../workflow";
 const settings = defineModel<CsvSettings>({ required: true });
-defineProps<{ side: string; headers?: string[]; xlsx?: boolean }>();
+defineProps<{
+  side: string;
+  headers?: string[];
+  xlsx?: boolean;
+  pdf?: boolean;
+}>();
 </script>
 <template>
   <fieldset class="settings">
-    <legend>{{ xlsx ? "XLSX" : "CSV" }} settings · {{ side }}</legend>
+    <legend>
+      {{ pdf ? "PDF" : xlsx ? "XLSX" : "CSV" }} settings · {{ side }}
+    </legend>
     <div class="field-grid">
       <label
         >SKU header<select
@@ -137,9 +144,11 @@ defineProps<{ side: string; headers?: string[]; xlsx?: boolean }>();
     </div>
     <p class="hint">
       {{
-        xlsx
-          ? "Stored numeric prices retain their exact decimal value; separators apply to text cells only. Unmapped commercial fields use the explicit file-wide defaults."
-          : "UTF-8 only. Header names are case-sensitive. Currency, unit, pack and price/tax basis apply to every row in this file."
+        pdf
+          ? "PDF text prices use the explicit decimal convention. Original evidence stays immutable; no fields are guessed."
+          : xlsx
+            ? "Stored numeric prices retain their exact decimal value; separators apply to text cells only. Unmapped commercial fields use the explicit file-wide defaults."
+            : "UTF-8 only. Header names are case-sensitive. Currency, unit, pack and price/tax basis apply to every row in this file."
       }}
     </p>
   </fieldset>

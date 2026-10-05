@@ -153,3 +153,55 @@ fixture writer; production ingestion uses Python `zipfile`, defused XML and Deci
 
 No PDF/OCR, fuzzy matching, margin calculations, XLSX export, billing, customer
 export mappings or hosted worker deployment are introduced.
+
+## Digital PDFs (Increment 7)
+
+Use digitally generated, unencrypted PDFs containing embedded text and a ruled
+catalogue table. Upload `.pdf` (10 MiB maximum), choose an explicit first/last page
+(up to 50 pages per extraction), and select ruled tables or text-aligned columns.
+Click **Extract selected pages**. The same local polling worker claims an
+`extract_pdf` job; this page shows queued/running state and measured page progress.
+You may leave and return. Nothing is parsed as a product in the browser.
+
+Open **Source text · page N** to inspect immutable embedded text. Select the table
+ordinal on every selected page and the header row within that table. Map SKU, price,
+description and optional currency/pack/UOM explicitly. Header names must be nonblank,
+unique and identical across selected pages. Number conventions and commercial
+defaults remain explicit. Repeated headers are skipped only when exactly identical
+and the user has selected that option. No row fragments are stitched across pages.
+
+Original values appear alongside separate correction inputs. Correct SKU,
+description, price, currency, pack or unit in its mapped source column. Enter plain
+nonnegative decimal prices using the selected decimal separator; pack quantities
+must be positive. **Clear value** records null rather than zero. Blank/invalid
+original prices and missing identifiers flow to review. Use **Save correction
+draft** to persist a snapshot; refresh restores mappings and replacements. Check
+that rows, columns and page continuation are correct, then **Confirm PDF mapping**
+before starting a comparison. Each save appends a numbered revision with the
+signed-in user and timestamp. Conflicting concurrent saves require refresh. Original
+PDF bytes/cells/page evidence remain immutable. A queued comparison references its
+specific confirmed revision, so subsequent edits cannot change its results.
+
+After normalization, the existing deterministic comparison, result/review screens
+and changed-products CSV export are unchanged. Structurally uncertain text-aligned
+rows and multiline identifiers/prices remain review items even after mapping
+confirmation; the current review flow excludes unsupported updates. Use a reliable
+ruled digital PDF or CSV/XLSX when you need trusted updates from those materials.
+
+**OCR required** is durable when any selected page lacks usable embedded text/table
+structure, is image-only, or contains unsupported merged/missing cell geometry.
+Available page text/evidence is retained, but incomplete extraction cannot be
+confirmed or reconciled. No OCR runs in this increment. Choose a supported page
+range, export a ruled digital PDF, or request CSV/XLSX from the supplier. Text-only
+prose, arbitrary layouts, diagrams, scans and malformed tables are not inferred into
+products. Encrypted PDFs must be exported without a password; corrupt PDFs need a
+fresh export. Extraction has a 60-second isolated process deadline; timeouts retain
+structured failure details and use the existing bounded retry/dead-letter policy.
+
+Limits: 50 selected pages, 5,000 extracted rows overall, 2,000 rows and 32 columns per
+table, 10,000 characters per cell, 16 MB extraction output, and 25 correction rows
+per browser page. Source preview is embedded text plus page references/cell geometry,
+not a rendered PDF image. Text previews show at most 50,000 characters per page;
+full original bytes stay in private Storage. PDFs never receive public URLs. Start
+locally with the existing `npm run dev:local` and `npm run worker:local` commands;
+no hosted Supabase or hosted worker setup is added.

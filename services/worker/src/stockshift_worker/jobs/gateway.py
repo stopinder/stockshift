@@ -61,7 +61,7 @@ class LocalGateway:
                 content = r.read(32 * 1024 * 1024 + 1)
                 if len(content) > 32 * 1024 * 1024:
                     raise ValueError("Local response exceeds safety limit")
-                return content if blob else json.loads(content)
+                return content if blob else (json.loads(content) if content else None)
         except HTTPError as exc:
             if exc.code >= 500 or exc.code in (408, 429):
                 raise TransportError("Local service unavailable") from None
@@ -78,6 +78,9 @@ class LocalGateway:
     def rpc(self, name: str, **payload):
         if name not in {
             "claim_csv_job",
+            "load_pdf_extraction",
+            "pdf_extraction_progress",
+            "complete_pdf_extraction",
             "heartbeat_csv_job",
             "load_csv_job",
             "complete_csv_job",

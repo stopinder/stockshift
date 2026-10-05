@@ -133,7 +133,11 @@ def test_worker_rejects_unready_cross_tenant_or_tampered_sources(field, value):
     run_once(gateway, str(uuid4()))
     assert gateway.completed is None
     assert gateway.failed["p_retryable"] is False
-    assert gateway.failed["p_failure"]["code"] == "invalid_csv_job"
+    assert gateway.failed["p_failure"]["code"] == (
+        "invalid_pdf_job"
+        if field == "verified_mime" and value == "application/pdf"
+        else "invalid_csv_job"
+    )
 
 
 def test_invalid_mapping_preserves_structured_failure_without_source_contents():

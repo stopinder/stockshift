@@ -11,6 +11,7 @@ import { SupabaseUploadGateway } from '../../apps/web/server/supabase-upload-gat
 import { createUploadIntent, finalizeUpload } from '../../apps/web/server/uploads'
 import { createServer } from 'node:http'
 import exportHandler from '../../apps/web/server/export'
+import pdfHandler from "../../apps/web/api/pdf"
 import workbookHandler from '../../apps/web/api/workbook'
 import { XLSX_MIME } from '../../apps/web/server/workbook'
 
@@ -76,7 +77,7 @@ test('real bucket is private with a 10 MiB limit and CSV MIME allowlist', async 
   assert.ifError(error)
   assert.equal(data!.public, false)
   assert.equal(Number(data!.file_size_limit), 10485760)
-  assert.deepEqual(data!.allowed_mime_types, ['text/csv','application/octet-stream','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
+  assert.deepEqual(data!.allowed_mime_types, ['text/csv','application/octet-stream','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/pdf'])
 })
 test('real Auth and signed upload finalize with verified bytes, MIME, SHA and idempotency', async () => {
   const file = await uploaded()
@@ -407,4 +408,127 @@ test('mixed CSV and XLSX inputs share durable results and record contracts',asyn
   assert.equal(changed.cost_delta_text,'0.001000000000000001')
   assert.ok(changed.provenance.some((e:{locator:{sheet:null}})=>e.locator.sheet===null))
   assert.ok(changed.provenance.some((e:{locator:{sheet:string}})=>e.locator.sheet==='Products'))
+})
+
+function pdfBytes(mode = '') {
+ const python=resolve('services/worker/.venv',process.platform==='win32'?'Scripts/python.exe':'bin/python')
+ return Buffer.from(execFileSync(python,['services/worker/tests/pdf_fixture.py',mode],{env,encoding:'utf8'}).trim(),'base64')
+}
+async function uploadedPdf(data=pdfBytes()) {
+ const file=await createUploadIntent(gateway,users.editor!.token,{tenantId:A,filename:'catalogue.pdf',byteCount:data.length})
+ assert.ifError((await users.editor!.client.storage.from(bucket).uploadToSignedUrl(file.path,file.token,data,{contentType:'application/pdf'})).error)
+ await finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:file.fileId})
+ return file
+}
+async function pdfExtraction(data=pdfBytes()) {
+ const file=await uploadedPdf(data)
+ const response=await users.editor!.client.rpc('enqueue_pdf_extraction',{p_tenant:A,p_file:file.fileId,p_configuration:{first_page:1,last_page:2,strategy:'lines'}})
+ assert.ifError(response.error);executeWorker()
+ const row=(await db.query('select * from public.extraction_runs where id=$1',[response.data.extraction.id])).rows[0]
+ return {file,row,job:response.data.job}
+}
+const pdfConfiguration={...csvOptions,columns:{supplier_sku:'SKU',cost_price:'Price',description:'Description',currency:'Currency',pack_quantity:'Pack',unit:'UOM'},currency:null,unit:null,pack_quantity:null,table_index:1,header_row:1,repeat_headers:true,structure_confirmed:true}
+async function pdfRevision(row:any,corrections:object={},expected=0,confirmed=true) {
+ const response=await users.editor!.client.rpc('save_pdf_revision',{p_tenant:A,p_extraction:row.id,p_expected:expected,p_configuration:pdfConfiguration,p_corrections:corrections,p_confirmed:confirmed})
+ assert.ifError(response.error);return response.data
+}
+test('PDF signed upload finalizes privately; exact PDF bytes are tenant-isolated',async()=>{
+ const data=pdfBytes(),file=await uploadedPdf(data)
+ const registered=(await db.query('select verified_mime,sha256 from public.source_files where id=$1',[file.fileId])).rows[0]
+ assert.equal(registered.verified_mime,'application/pdf');assert.equal(registered.sha256,createHash('sha256').update(data).digest('hex'))
+ assert.ok((await users.other!.client.storage.from(bucket).download(file.path)).error)
+ assert.ok(!(await fetch(`${url}/storage/v1/object/public/${bucket}/${file.path}`)).ok)
+ const read=await users.viewer!.client.storage.from(bucket).download(file.path);assert.ifError(read.error)
+ assert.deepEqual(Buffer.from(await read.data!.arrayBuffer()),data)
+})
+test('PDF corrupt/encrypted finalization fails safely and persists failed state',async()=>{
+ for(const data of [Buffer.from('%PDF-1.7 corrupt'),pdfBytes('encrypted')]) {
+  const file=await createUploadIntent(gateway,users.editor!.token,{tenantId:A,filename:'bad.pdf',byteCount:data.length})
+  assert.ifError((await users.editor!.client.storage.from(bucket).uploadToSignedUrl(file.path,file.token,data,{contentType:'application/pdf'})).error)
+  await assert.rejects(finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:file.fileId}),{status:422})
+  assert.equal((await db.query('select status from public.source_files where id=$1',[file.fileId])).rows[0].status,'failed')
+ }
+})
+test('real PDF extraction job stores all pages, measured progress and immutable original cell evidence',async()=>{
+ const x=await pdfExtraction();assert.equal(x.row.status,'ready');assert.equal(x.row.completed_pages,2);assert.equal(x.row.total_pages,2)
+ assert.equal(x.row.payload.records.length,5);assert.deepEqual(x.row.raw_pages.map((p:any)=>p.page),[1,2])
+ assert.ok(x.row.payload.evidence.every((e:any)=>e.source_file_id===x.file.fileId&&e.locator.bounding_polygon.length===4))
+ assert.equal((await db.query('select status,attempt_count from public.jobs where id=$1',[x.job.id])).rows[0].status,'succeeded')
+ await assert.rejects(db.query("update public.extraction_runs set payload='{}' where id=$1",[x.row.id]),e=>(e as {code:string}).code==='23514')
+ await assert.rejects(db.query('delete from public.extraction_runs where id=$1',[x.row.id]),e=>(e as {code:string}).code==='23514')
+ const repeat=await users.editor!.client.rpc('enqueue_pdf_extraction',{p_tenant:A,p_file:x.file.fileId,p_configuration:{first_page:1,last_page:2,strategy:'lines'}})
+ assert.ifError(repeat.error);assert.equal(repeat.data.job.id,x.job.id)
+})
+test('PDF correction revisions persist original/corrected values, actor/time and optimistic conflicts',async()=>{
+ const x=await pdfExtraction(pdfBytes('incoming')),id=x.row.payload.records[1].record_id
+ const draft=await pdfRevision(x.row,{[id]:{cost_price:'1.002000000000000001'}},0,false)
+ assert.equal(draft.revision,1);assert.equal(draft.created_by,users.editor!.id);assert.ok(draft.created_at)
+ const conflict=await users.editor!.client.rpc('save_pdf_revision',{p_tenant:A,p_extraction:x.row.id,p_expected:0,p_configuration:pdfConfiguration,p_corrections:{},p_confirmed:true})
+ assert.equal(conflict.error?.code,'23514')
+ const final=await pdfRevision(x.row,draft.corrections,1)
+ assert.equal(final.revision,2);assert.equal(final.confirmed,true)
+ const reload=await users.viewer!.client.from('correction_revisions').select('*').eq('id',final.id).single();assert.ifError(reload.error);assert.deepEqual(reload.data.corrections,draft.corrections)
+ assert.equal((await db.query('select payload from public.extraction_runs where id=$1',[x.row.id])).rows[0].payload.records[1].raw_cells[1].value,'1.2O')
+ await assert.rejects(db.query("update public.correction_revisions set corrections='{}' where id=$1",[final.id]),e=>(e as {code:string}).code==='23514')
+ await assert.rejects(db.query('delete from public.correction_revisions where id=$1',[final.id]),e=>(e as {code:string}).code==='23514')
+})
+test('PDF extraction/corrections enforce RLS and reject direct browser worker mutations',async()=>{
+ const x=await pdfExtraction(),v=await pdfRevision(x.row)
+ for(const table of ['extraction_runs','correction_revisions']) {
+  const other=await users.other!.client.from(table).select('*').eq('tenant_id',A);assert.ifError(other.error);assert.equal(other.data!.length,0)
+  assert.ok((await users.editor!.client.from(table).update({tenant_id:B}).eq('id',table==='extraction_runs'?x.row.id:v.id)).error)
+ }
+ for(const role of ['viewer','other']) {
+  assert.equal((await users[role]!.client.rpc('enqueue_pdf_extraction',{p_tenant:A,p_file:x.file.fileId,p_configuration:{first_page:1,last_page:2,strategy:'lines'}})).error?.code,'42501')
+  assert.equal((await users[role]!.client.rpc('save_pdf_revision',{p_tenant:A,p_extraction:x.row.id,p_expected:1,p_configuration:pdfConfiguration,p_corrections:{},p_confirmed:true})).error?.code,'42501')
+ }
+ for(const name of ['load_pdf_extraction','complete_pdf_extraction','pdf_extraction_progress']) {
+  const params={p_tenant:A,p_job:x.job.id,p_worker:randomUUID(),p_token:randomUUID(),...(name==='complete_pdf_extraction'?{p_payload:x.row.payload,p_pages:x.row.raw_pages}:{}),...(name==='pdf_extraction_progress'?{p_completed:1,p_total:2}:{})}
+  assert.ok((await users.editor!.client.rpc(name,params)).error)
+ }
+})
+test('image-only PDF durably enters OCR-required and cannot be confirmed',async()=>{
+ const x=await pdfExtraction(pdfBytes('image'))
+ assert.equal(x.row.status,'ocr_required');assert.equal(x.row.payload.completion.state,'incomplete');assert.equal(x.row.payload.records.length,0)
+ const v=await users.editor!.client.rpc('save_pdf_revision',{p_tenant:A,p_extraction:x.row.id,p_expected:0,p_configuration:pdfConfiguration,p_corrections:{},p_confirmed:true})
+ assert.equal(v.error?.code,'42501')
+})
+test('PDF corrections reject invalid decimals, blank identifiers and records outside extraction',async()=>{
+ const x=await pdfExtraction(),id=x.row.payload.records[1].record_id
+ for(const corrections of [{[id]:{cost_price:'NaN'}},{[id]:{supplier_sku:''}},{[randomUUID()]:{cost_price:'2'}},{[id]:{currency:'gbp'}},{[id]:{tenant_id:B}}]) {
+  const r=await users.editor!.client.rpc('save_pdf_revision',{p_tenant:A,p_extraction:x.row.id,p_expected:0,p_configuration:pdfConfiguration,p_corrections:corrections,p_confirmed:true});assert.equal(r.error?.code,'23514')
+ }
+})
+test('digital PDF comparison uses confirmed correction snapshot, exact persisted results, review and trusted export',async()=>{
+ const a=await pdfExtraction(),b=await pdfExtraction(pdfBytes('incoming'))
+ const ar=await pdfRevision(a.row),record=b.row.payload.records[1].record_id
+ const br=await pdfRevision(b.row,{[record]:{cost_price:'1.002000000000000001'}})
+ const comp=await users.editor!.client.from('comparisons').insert({tenant_id:A,title:'Digital PDF correction comparison'}).select().single();assert.ifError(comp.error)
+ assert.ifError((await users.editor!.client.from('comparison_files').insert([{tenant_id:A,comparison_id:comp.data.id,source_file_id:a.file.fileId,side:'current'},{tenant_id:A,comparison_id:comp.data.id,source_file_id:b.file.fileId,side:'incoming'}])).error)
+ const request={p_tenant:A,p_comparison:comp.data.id,p_key:randomUUID(),p_current_options:{format:'pdf',revision_id:ar.id},p_incoming_options:{format:'pdf',revision_id:br.id}}
+ const queued=await users.editor!.client.rpc('enqueue_comparison_job',request);assert.ifError(queued.error)
+ // A later confirmed revision cannot change the already queued comparison snapshot.
+ await pdfRevision(b.row,{[record]:{cost_price:'99'}},1)
+ executeWorker();const job=queued.data
+ assert.equal((await db.query('select status from public.jobs where id=$1',[job.id])).rows[0].status,'succeeded')
+ const response=await users.editor!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id});assert.ifError(response.error)
+ assert.equal(response.data.length,4)
+ const changed=response.data.find((r:any)=>r.primary_outcome==='changed');assert.equal(changed.new_values.supplier_sku,'00123');assert.equal(changed.new_values.cost_price,'1.002000000000000001');assert.equal(changed.cost_delta_text,'0.001000000000000001')
+ assert.ok(changed.provenance.some((e:any)=>e.raw_text==='1.2O'&&e.locator.page===1&&e.locator.column==='Price'))
+ assert.equal((await exportRequest(job.comparison_run_id)).status,409)
+ for(const r of response.data.filter((r:any)=>r.review_state==='pending')) assert.ifError((await users.editor!.client.rpc('resolve_csv_review',{p_tenant:A,p_run:job.comparison_run_id,p_result:r.id,p_decision:'no_match',p_note:'Missing PDF price; exclude'})).error)
+ const exported=await exportRequest(job.comparison_run_id);assert.equal(exported.status,200);assert.match(await exported.text(),/0\.001000000000000001/)
+ const duplicate=await users.editor!.client.rpc('enqueue_comparison_job',request);assert.ifError(duplicate.error);assert.equal(duplicate.data.id,job.id);executeWorker()
+ assert.equal((await db.query('select count(*)::int n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,4)
+ const other=await users.other!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id});assert.ifError(other.error);assert.equal(other.data.length,0)
+})
+
+test('PDF page discovery authenticates, uses tenant RLS and verifies original private bytes',async()=>{
+ const file=await uploadedPdf()
+ for(const role of ['editor','viewer','other']) {
+  const res={statusCode:0,output:'',setHeader(){},end(value:string){this.output=value}}
+  await pdfHandler({method:'POST',headers:{authorization:`Bearer ${users[role]!.token}`},body:{tenantId:A,fileId:file.fileId}} as Parameters<typeof pdfHandler>[0],res as unknown as Parameters<typeof pdfHandler>[1])
+  assert.equal(res.statusCode,role==='other'?403:200)
+  if(role!=='other') assert.deepEqual(JSON.parse(res.output),{pages:2})
+ }
 })

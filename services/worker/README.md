@@ -207,3 +207,35 @@ See [workbook assumptions and local mapping](../../docs/LOCAL_CSV_WORKFLOW.md#xl
 for limits, formulas, identifier padding and actionable failure behavior. The public
 CSV APIs and their monetary semantics remain unchanged. `openpyxl` is pinned only
 in the development group to write realistic OOXML test fixtures, not used at runtime.
+
+## Digital PDF provider and revisions (Increment 7)
+
+`extraction.digital_pdf.DigitalPdfExtractor` implements the existing validated
+`DocumentExtractor` protocol using pinned `pdfplumber==0.11.10`. It reads embedded
+text and table cell geometry, reports actual page progress, and returns the existing
+provider-neutral `ExtractionResult` envelope with raw cells, page/table/row/cell
+locators and bounding polygons in page points. It does not guess semantic fields,
+assign confidence scores, run OCR, match products or calculate margins.
+
+Durable `extract_pdf` jobs share claim/lease/heartbeat/attempt/retry/fencing with
+comparison jobs. Parsing runs in a credential-free subprocess with a 60-second
+deadline, bounded input/output and cancellation on lost lease. Progress/completion
+RPCs validate tenant/source/job ownership and lease tokens; duplicate completion is
+idempotent and conflicting publication is rejected. Timeouts are retryable, bounded
+by the existing three-attempt policy; corrupt/encrypted input fails terminally.
+
+`extraction_runs.payload` stores the immutable raw validated envelope and
+`raw_pages` stores text previews. Append-only `correction_revisions` store full
+mapping/correction snapshots with actor/time and optimistic revision checks.
+`comparison_runs` snapshot confirmed revision IDs via tenant/source-aware foreign
+keys. `normalize_pdf` applies that snapshot through the same `normalize_rows`
+contract as CSV/XLSX, then replaces synthetic row locators with original PDF evidence.
+Normalized products are persisted in the existing comparison result old/new values;
+original source evidence always contains the extracted value, even after correction.
+A future OCR provider can implement the same extraction envelope while leaving
+normalization, reconciliation, publication and review/export unchanged.
+
+See [digital PDF assumptions and correction steps](../../docs/LOCAL_CSV_WORKFLOW.md#digital-pdfs-increment-7).
+`reportlab==5.0.1` is development-only and generates synthetic test fixtures. The
+installed-wheel and CPU-container smoke tests parse these fixtures without any
+fixture writer installed in the runtime. No OCR model or hosted credentials are used.

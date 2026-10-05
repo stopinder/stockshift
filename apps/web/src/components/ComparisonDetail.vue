@@ -10,6 +10,7 @@ import {
 } from "../workflow";
 import type { Client, ResultRow } from "../workflow";
 import CsvSettings from "./CsvSettings.vue";
+import PdfSettings from "./PdfSettings.vue";
 import XlsxSettings from "./XlsxSettings.vue";
 const props = defineProps<{
   client: Client;
@@ -298,6 +299,7 @@ async function enqueue() {
         ).json();
         const options = side === "current" ? a : b;
         if (
+          !("columns" in options) ||
           !Object.values(options.columns).every((h) =>
             preview.headers.includes(h),
           )
@@ -487,18 +489,29 @@ onUnmounted(() => {
                 : 'New catalogue file'
             "
             type="file"
-            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".pdf,application/pdf,.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             :disabled="busy || !!files[side]"
             @change="upload(side, $event)"
           /><small role="status">{{
             files[side]
               ? "✓ Verified and ready"
-              : uploadState[side] || "CSV or XLSX · up to 10 MiB"
+              : uploadState[side] || "CSV, XLSX or PDF · up to 10 MiB"
           }}</small></label
         >
       </div>
+      <PdfSettings
+        v-if="files.current?.original_filename.toLowerCase().endsWith('.pdf')"
+        :key="files.current.id"
+        v-model="currentSettings"
+        :client="client"
+        :tenant-id="tenantId"
+        :file-id="files.current.id"
+        side="current catalogue"
+      />
       <XlsxSettings
-        v-if="files.current?.original_filename.toLowerCase().endsWith('.xlsx')"
+        v-else-if="
+          files.current?.original_filename.toLowerCase().endsWith('.xlsx')
+        "
         v-model="currentSettings"
         :client="client"
         :tenant-id="tenantId"
@@ -506,8 +519,19 @@ onUnmounted(() => {
         side="current catalogue"
       />
       <CsvSettings v-else v-model="currentSettings" side="current catalogue" />
+      <PdfSettings
+        v-if="files.incoming?.original_filename.toLowerCase().endsWith('.pdf')"
+        :key="files.incoming.id"
+        v-model="incomingSettings"
+        :client="client"
+        :tenant-id="tenantId"
+        :file-id="files.incoming.id"
+        side="new catalogue"
+      />
       <XlsxSettings
-        v-if="files.incoming?.original_filename.toLowerCase().endsWith('.xlsx')"
+        v-else-if="
+          files.incoming?.original_filename.toLowerCase().endsWith('.xlsx')
+        "
         v-model="incomingSettings"
         :client="client"
         :tenant-id="tenantId"
@@ -805,7 +829,7 @@ onUnmounted(() => {
             <thead>
               <tr>
                 <th>File</th>
-                <th>Worksheet / row</th>
+                <th>Page / worksheet / row</th>
                 <th>Column</th>
                 <th>Source value</th>
               </tr>
@@ -824,9 +848,11 @@ onUnmounted(() => {
                 </td>
                 <td class="number">
                   {{
-                    evidence.locator.sheet
-                      ? evidence.locator.sheet + " / "
-                      : ""
+                    evidence.locator.page
+                      ? "Page " + evidence.locator.page + " / "
+                      : evidence.locator.sheet
+                        ? evidence.locator.sheet + " / "
+                        : ""
                   }}{{ evidence.locator.row ?? "—" }}
                 </td>
                 <td>

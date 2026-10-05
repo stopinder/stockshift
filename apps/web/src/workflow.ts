@@ -43,7 +43,13 @@ export interface SourceEvidence {
   source_file_id: string;
   field_name: string;
   raw_text: string;
-  locator: { row: number | null; column: string | null; sheet?: string | null };
+  locator: {
+    row: number | null;
+    column: string | null;
+    sheet?: string | null;
+    page?: number | null;
+    table?: string | null;
+  };
 }
 export interface ResultRow {
   id: string;
@@ -85,6 +91,7 @@ export function friendlyError(error: unknown): string {
     : "The service is unavailable. Check the local stack and try again.";
 }
 export interface CsvSettings {
+  pdfRevisionId?: string | undefined;
   worksheet?: string;
   headerRow?: number;
   currencyColumn?: string;
@@ -172,6 +179,18 @@ export function csvOptions(s: CsvSettings, mappedFields: string[] = []) {
   };
 }
 export function importOptions(s: CsvSettings, filename: string) {
+  if (/\.pdf$/i.test(filename)) {
+    if (
+      !s.pdfRevisionId ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+        s.pdfRevisionId,
+      )
+    )
+      throw new Error(
+        "Confirm PDF mapping and corrections before starting the comparison.",
+      );
+    return { format: "pdf", revision_id: s.pdfRevisionId };
+  }
   if (!/\.xlsx$/i.test(filename)) return csvOptions(s);
   const options = csvOptions(s, [
     ...(s.currencyColumn ? ["currency"] : []),
@@ -232,11 +251,13 @@ export async function uploadCsv(
   progress: (state: string) => void,
 ): Promise<string> {
   if (
-    !/\.(csv|xlsx)$/i.test(file.name) ||
+    !/\.(csv|xlsx|pdf)$/i.test(file.name) ||
     file.size < 1 ||
     file.size > 10485760
   )
-    throw new Error("Choose a CSV or XLSX file between 1 byte and 10 MiB.");
+    throw new Error(
+      "Choose a CSV, XLSX or PDF file between 1 byte and 10 MiB.",
+    );
   progress("Registering upload…");
   const intent = await (
     await api(client, "/api/uploads", {
@@ -251,9 +272,11 @@ export async function uploadCsv(
   const { error } = await client.storage
     .from("catalogue-uploads")
     .uploadToSignedUrl(intent.path, intent.token, file, {
-      contentType: /\.xlsx$/i.test(file.name)
-        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        : "text/csv",
+      contentType: /\.pdf$/i.test(file.name)
+        ? "application/pdf"
+        : /\.xlsx$/i.test(file.name)
+          ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          : "text/csv",
     });
   if (error)
     throw new Error(

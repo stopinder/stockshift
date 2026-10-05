@@ -181,3 +181,20 @@ Real local integration tests cover XLSX signed uploads, authenticated discovery,
 tenant denial, precise persisted results/provenance, review/export and terminal
 formula errors without partial publication. The historic `*_csv_job` RPC names
 remain stable for compatibility and now transport normalized CSV/XLSX jobs.
+
+## Digital PDF extraction/corrections
+
+Migration `20261005191747_digital_pdf_corrections.sql` adds tenant-owned
+`extraction_runs` and append-only `correction_revisions`, expands the private upload
+MIME/extension gate to PDF, and extends the existing fenced jobs with `extract_pdf`.
+The job has exactly one comparison or extraction reference. Browser members can
+read their tenant's extraction/revisions; only owner/editor enqueue/save RPCs may
+create them. Browser direct mutation and worker claim/progress/completion are denied.
+Worker paths revalidate tenant/source/lease ownership. Completed evidence and all
+revision events reject update/delete even through privileged table access. Confirmed
+revision references include both tenant and source in foreign keys.
+
+`npm run test:local` now includes native PDF security/lease/revision checks and real
+Auth/private Storage/Python PDF extraction/correction/comparison/export integration.
+Keep using the guarded local commands, reset migrations from scratch, and never
+link or push migrations to a hosted Supabase project for this workflow.

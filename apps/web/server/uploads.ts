@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { inspectWorkbook, XLSX_MIME } from './workbook.ts'
+import { inspectPdf, PDF_MIME } from './pdf.ts'
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 export const BUCKET = 'catalogue-uploads'
@@ -53,8 +54,8 @@ export function parseIntent(input: unknown): Intent {
     throw new UploadError(400, 'Unknown upload property')
   }
   const filename = value.filename
-  if (typeof filename !== 'string' || filename.length > 255 || !/\.(csv|xlsx)$/i.test(filename)
-    || /[/\\\x00-\x1f\x7f]/.test(filename)) throw new UploadError(400, 'Use a plain CSV or XLSX filename')
+  if (typeof filename !== 'string' || filename.length > 255 || !/\.(csv|xlsx|pdf)$/i.test(filename)
+    || /[/\\\x00-\x1f\x7f]/.test(filename)) throw new UploadError(400, 'Use a plain CSV, XLSX or PDF filename')
   const bytes = value.byteCount
   if (typeof bytes !== 'number' || !Number.isSafeInteger(bytes) || bytes < 1 || bytes > MAX_UPLOAD_BYTES) {
     throw new UploadError(400, 'File size must be 1 byte to 10 MiB')
@@ -118,7 +119,10 @@ export async function finalizeUpload(gateway: UploadGateway, token: string, inpu
     if (blob.size !== file.expected_byte_count) throw new UploadError(422, 'Uploaded size differs from intent')
     const bytes = new Uint8Array(await blob.arrayBuffer())
     let verification: { mime: string; sha256: string }
-    if (/\.xlsx$/i.test(file.original_filename)) {
+    if (/\.pdf$/i.test(file.original_filename)) {
+      await inspectPdf(bytes)
+      verification = { mime: PDF_MIME, sha256: createHash('sha256').update(bytes).digest('hex') }
+    } else if (/\.xlsx$/i.test(file.original_filename)) {
       await inspectWorkbook(bytes)
       verification = { mime: XLSX_MIME, sha256: createHash('sha256').update(bytes).digest('hex') }
     } else verification = verifyCsv(bytes)

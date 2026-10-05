@@ -535,3 +535,265 @@ test("XLSX corrupt upload retry, empty worksheet and formula failure are actiona
   });
   await noOverflow(page);
 });
+
+function pdfBuffer(mode = "") {
+  const python = resolve(
+    "services/worker/.venv",
+    process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
+  );
+  return Buffer.from(
+    execFileSync(python, ["services/worker/tests/pdf_fixture.py", mode], {
+      env,
+      encoding: "utf8",
+    }).trim(),
+    "base64",
+  );
+}
+async function uploadPdf(page: Page, side: "Current" | "New", mode = "") {
+  await page
+    .getByLabel(
+      side === "Current" ? "Current catalogue file" : "New catalogue file",
+    )
+    .setInputFiles({
+      name: side.toLowerCase() + ".pdf",
+      mimeType: "application/pdf",
+      buffer: pdfBuffer(mode),
+    });
+  const area = page.getByRole("region", {
+    name:
+      "PDF import · " +
+      (side === "Current" ? "current catalogue" : "new catalogue"),
+  });
+  await expect(
+    area.getByText("2 pages available", { exact: false }),
+  ).toBeVisible();
+  await area.getByRole("button", { name: "Extract selected pages" }).click();
+  await expect(
+    area.getByText("PDF extraction queued", { exact: false }),
+  ).toBeVisible();
+  return area;
+}
+async function mapPdf(page: Page, index: number) {
+  const area = page.locator(".pdf-settings").nth(index);
+  await expect(
+    area.getByRole("heading", { name: "Original values and corrections" }),
+  ).toBeVisible({ timeout: 15000 });
+  for (const [field, column] of [
+    ["SKU header", "SKU"],
+    ["Cost header", "Price"],
+    ["Description header", "Description"],
+    ["Currency column", "Currency"],
+    ["Pack quantity column", "Pack"],
+    ["Unit column", "UOM"],
+  ])
+    await area.getByLabel(field!, { exact: true }).selectOption(column!);
+  return area;
+}
+test("digital PDF extraction → mapping → persisted correction → comparison/review/export survives re-entry", async ({
+  page,
+}, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await create(page, "Digital PDF correction review");
+  await uploadPdf(page, "Current");
+  await uploadPdf(page, "New", "incoming");
+  const progressWorker = randomUUID();
+  const held = await admin.rpc("claim_csv_job", { p_worker: progressWorker });
+  expect(held.error).toBeNull();
+  expect(held.data.kind).toBe("extract_pdf");
+  const measured = await admin.rpc("pdf_extraction_progress", {
+    p_tenant: held.data.tenant_id,
+    p_job: held.data.id,
+    p_worker: progressWorker,
+    p_token: held.data.lease_token,
+    p_completed: 1,
+    p_total: 2,
+  });
+  expect(measured.error).toBeNull();
+  await expect(
+    page
+      .locator(".pdf-settings")
+      .first()
+      .getByText(/Extracting digital PDF.*1 \/ 2 pages/),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `.tools/${info.project.name}-pdf-progress.png`,
+    fullPage: true,
+  });
+  const expiry = new Client({
+    host: "127.0.0.1",
+    port: 54322,
+    user: "postgres",
+    password: "postgres",
+    database: "postgres",
+    ssl: false,
+  });
+  await expiry.connect();
+  try {
+    await expiry.query(
+      "update public.jobs set lease_expires_at=clock_timestamp()-interval '1 second' where id=$1",
+      [held.data.id],
+    );
+  } finally {
+    await expiry.end();
+  }
+  worker();
+  worker();
+  const a = await mapPdf(page, 0),
+    b = await mapPdf(page, 1);
+  await a.getByText("Source text · page 1", { exact: true }).click();
+  await expect(a.locator("pre").first()).toContainText("00123");
+  await b
+    .getByLabel("Correct cost_price page 1 row 2", { exact: true })
+    .fill("NaN");
+  await b.getByRole("button", { name: "Save correction draft" }).click();
+  await expect(b.getByRole("alert")).toContainText("plain decimal text");
+  await b
+    .getByLabel("Correct cost_price page 1 row 2", { exact: true })
+    .fill("1.002000000000000001");
+  await b.getByRole("button", { name: "Save correction draft" }).click();
+  await expect(
+    b.getByText("Correction draft saved.", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `.tools/${info.project.name}-pdf-correction.png`,
+    fullPage: true,
+  });
+  await noOverflow(page);
+  await page.reload();
+  const saved = page.locator(".pdf-settings").nth(1);
+  await expect(saved.getByLabel("Correct cost_price page 1 row 2")).toHaveValue(
+    "1.002000000000000001",
+  );
+  await expect(
+    saved.getByText("Original: 1.2O", { exact: true }),
+  ).toBeVisible();
+  // Current mapping was deliberately not saved; select it again explicitly.
+  await mapPdf(page, 0);
+  for (const area of [page.locator(".pdf-settings").nth(0), saved]) {
+    await area
+      .getByLabel("I checked the selected table", { exact: false })
+      .check();
+    await area.getByRole("button", { name: "Confirm PDF mapping" }).click();
+    await expect(
+      area.getByText("PDF mapping confirmed. Ready for comparison.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+  }
+  await page.reload();
+  await expect(
+    page
+      .locator(".pdf-settings")
+      .nth(1)
+      .getByText(/Revision 2 · confirmed/),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Start comparison", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Comparison queued" }),
+  ).toBeVisible();
+  worker();
+  await expect(
+    page.getByRole("region", { name: "Persisted outcome counts" }),
+  ).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("00123", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Review", exact: true }),
+  ).toHaveCount(2);
+  for (let i = 0; i < 2; i++) {
+    await page
+      .getByRole("button", { name: "Review", exact: true })
+      .first()
+      .click();
+    await page.locator("dialog summary").click();
+    await expect(
+      page
+        .locator(".evidence-table")
+        .getByText(/Page 1 \/ 3/)
+        .first(),
+    ).toBeVisible();
+    if (i === 0)
+      await page.screenshot({
+        path: `.tools/${info.project.name}-pdf-review.png`,
+        fullPage: true,
+      });
+    await page
+      .getByLabel("Decision reason")
+      .fill("Original PDF price is blank; exclude pending supplier correction");
+    await page
+      .getByRole("button", { name: "Confirm no match · exclude" })
+      .click();
+    await expect(page.locator("dialog")).not.toBeVisible();
+  }
+  await page.reload();
+  const event = page.waitForEvent("download");
+  await page.getByRole("button", { name: "↓ Export changed products" }).click();
+  const file = await event,
+    csv = readFileSync((await file.path())!, "utf8");
+  expect(csv).toContain('"00123"');
+  expect(csv).toContain("0.001000000000000001");
+  expect(csv.split("\r\n").filter(Boolean)).toHaveLength(2);
+  await page.screenshot({
+    path: `.tools/${info.project.name}-pdf-complete.png`,
+    fullPage: true,
+  });
+  await noOverflow(page);
+  expect(errors).toEqual([]);
+});
+test("image-only PDF shows persistent OCR-required state and cannot be confirmed", async ({
+  page,
+}, info) => {
+  await create(page, "Scanned PDF needs OCR");
+  const area = await uploadPdf(page, "Current", "image");
+  worker();
+  await expect(
+    area.getByRole("heading", { name: "OCR required", exact: true }),
+  ).toBeVisible({ timeout: 15000 });
+  await expect(
+    area.getByRole("button", { name: "Confirm PDF mapping" }),
+  ).toHaveCount(0);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "OCR required", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `.tools/${info.project.name}-pdf-ocr-required.png`,
+    fullPage: true,
+  });
+  await noOverflow(page);
+});
+test("PDF corrupt/encrypted uploads, invalid page range and missing mapping give actionable errors", async ({
+  page,
+}, info) => {
+  await create(page, "PDF input errors");
+  for (const data of [Buffer.from("%PDF-1.7 broken"), pdfBuffer("encrypted")]) {
+    await page.getByLabel("Current catalogue file").setInputFiles({
+      name: "broken.pdf",
+      mimeType: "application/pdf",
+      buffer: data,
+    });
+    await expect(
+      page.getByRole("alert").filter({ hasText: /Corrupt|Password-protected/ }),
+    ).toBeVisible();
+  }
+  const area = await uploadPdf(page, "Current");
+  worker();
+  await expect(
+    area.getByRole("heading", { name: "Original values and corrections" }),
+  ).toBeVisible({ timeout: 15000 });
+  await area.getByLabel("Last page", { exact: true }).fill("3");
+  await area.getByRole("button", { name: "Extract selected pages" }).click();
+  await expect(area.getByRole("alert")).toContainText(
+    "page range within the PDF",
+  );
+  await area.getByLabel("Last page", { exact: true }).fill("2");
+  await area.getByRole("button", { name: "Save correction draft" }).click();
+  await expect(area.getByRole("alert")).toContainText("Map PDF SKU and cost");
+  await page.screenshot({
+    path: `.tools/${info.project.name}-pdf-error.png`,
+    fullPage: true,
+  });
+  await noOverflow(page);
+});
