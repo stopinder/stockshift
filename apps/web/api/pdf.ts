@@ -1,8 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { localConfigFromEnv } from "../server/supabase-upload-gateway.ts";
-import { BUCKET, UploadError } from "../server/uploads.ts";
+import { serverConfigFromEnv } from "../server/supabase-upload-gateway.ts";
+import {
+  BUCKET,
+  UploadError,
+  requireSupportedUpload,
+} from "../server/uploads.ts";
 import { inspectPdf, PDF_MIME } from "../server/pdf.ts";
 
 export default async function handler(
@@ -12,6 +16,7 @@ export default async function handler(
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Type", "application/json");
   try {
+    requireSupportedUpload("inspection.pdf");
     if (req.method !== "POST") {
       res.setHeader("Allow", "POST");
       throw new UploadError(405, "Use POST.");
@@ -34,7 +39,7 @@ export default async function handler(
       !uuid.test(value.fileId ?? "")
     )
       throw new UploadError(400, "Choose a valid PDF source.");
-    const config = localConfigFromEnv();
+    const config = serverConfigFromEnv();
     const client = createClient(config.url, config.publishableKey, {
       auth: { persistSession: false },
       global: { headers: { Authorization: authorization } },

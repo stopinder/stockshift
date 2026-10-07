@@ -1,7 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { BUCKET, UploadError, type Intent, type Role, type SourceFile, type UploadGateway } from './uploads.ts'
+import { browserConfigFromEnv, validatePublicKey, validateServerKey, validateSupabaseUrl, type SupabaseMode } from '../src/supabase-config.ts'
 
-export interface LocalSupabaseConfig { url: string; publishableKey: string; secretKey: string }
+export interface LocalSupabaseConfig { url: string; publishableKey: string; secretKey: string; mode?: SupabaseMode }
 export function validateLocalConfig(config: LocalSupabaseConfig): LocalSupabaseConfig {
   const url = new URL(config.url)
   if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(url.hostname)
@@ -16,6 +17,33 @@ export function localConfigFromEnv(): LocalSupabaseConfig {
     publishableKey: process.env.STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY ?? '',
     secretKey: process.env.STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY ?? '' })
 }
+function validateConfig(config: LocalSupabaseConfig): LocalSupabaseConfig {
+  if ((config.mode ?? 'local') === 'local') return validateLocalConfig(config)
+  validateSupabaseUrl(config.url, config.mode)
+  validatePublicKey(config.publishableKey)
+  validateServerKey(config.secretKey)
+  return config
+}
+export function serverConfigFromEnv(env: NodeJS.ProcessEnv = process.env): LocalSupabaseConfig {
+  const mode = env.STOCKSHIFT_SUPABASE_MODE ?? 'local'
+  if (env.VERCEL === '1' && mode !== 'hosted')
+    throw new Error('Vercel requires explicit hosted Supabase configuration')
+  if (mode === 'local') {
+    return validateLocalConfig({url: env.STOCKSHIFT_LOCAL_SUPABASE_URL ?? '',
+      publishableKey: env.STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY ?? '',
+      secretKey: env.STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY ?? ''})
+  }
+  if (mode !== 'hosted') throw new Error('Supabase mode must be local or hosted')
+  return validateConfig({mode, url: env.STOCKSHIFT_SUPABASE_URL ?? '',
+    publishableKey: env.STOCKSHIFT_SUPABASE_PUBLISHABLE_KEY ?? '',
+    secretKey: env.STOCKSHIFT_SUPABASE_SECRET_KEY ?? ''})
+}
+export function validateDeploymentConfig(env: NodeJS.ProcessEnv = process.env): void {
+  const browser = browserConfigFromEnv(env, true)
+  const server = serverConfigFromEnv({ ...env, VERCEL: '1' })
+  if (new URL(browser.url).origin !== new URL(server.url).origin || browser.key !== server.publishableKey)
+    throw new Error('Browser and API must use the same preview Supabase project and public key')
+}
 function result<T>(data: T | null, error: unknown): T {
   if (error || data === null) throw new UploadError(409, 'Upload storage/database operation failed')
   return data
@@ -23,7 +51,7 @@ function result<T>(data: T | null, error: unknown): T {
 export class SupabaseUploadGateway implements UploadGateway {
   private readonly admin: SupabaseClient
   constructor(private readonly config: LocalSupabaseConfig) {
-    validateLocalConfig(config)
+    validateConfig(config)
     this.admin = this.client(config.secretKey)
   }
   private client(key: string, token?: string): SupabaseClient {

@@ -9,6 +9,14 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export class UploadError extends Error {
   constructor(readonly status: number, message: string) { super(message) }
 }
+export function csvPreviewOnly(env = process.env): boolean {
+  return env.STOCKSHIFT_SUPABASE_MODE === 'hosted' || env.VERCEL === '1'
+    || env.STOCKSHIFT_CSV_ONLY === '1'
+}
+export function requireSupportedUpload(filename: string): void {
+  if (csvPreviewOnly() && !/\.csv$/i.test(filename))
+    throw new UploadError(422, 'This preview supports CSV only. XLSX, PDF and OCR are unavailable.')
+}
 export type Role = 'owner' | 'editor' | 'viewer'
 export interface SourceFile {
   id: string
@@ -56,6 +64,7 @@ export function parseIntent(input: unknown): Intent {
   const filename = value.filename
   if (typeof filename !== 'string' || filename.length > 255 || !/\.(csv|xlsx|pdf)$/i.test(filename)
     || /[/\\\x00-\x1f\x7f]/.test(filename)) throw new UploadError(400, 'Use a plain CSV, XLSX or PDF filename')
+  requireSupportedUpload(filename)
   const bytes = value.byteCount
   if (typeof bytes !== 'number' || !Number.isSafeInteger(bytes) || bytes < 1 || bytes > MAX_UPLOAD_BYTES) {
     throw new UploadError(400, 'File size must be 1 byte to 10 MiB')
@@ -112,9 +121,13 @@ export async function finalizeUpload(gateway: UploadGateway, token: string, inpu
   const actor = await authorize(gateway, token, tenant)
   const file = await gateway.transition(tenant, fileId, actor, 'begin')
   registered(file, tenant, actor, fileId)
-  if (file.status === 'ready') return publicFile(file)
+  if (file.status === 'ready') {
+    requireSupportedUpload(file.original_filename)
+    return publicFile(file)
+  }
   if (file.status !== 'verifying') throw new UploadError(409, 'Upload cannot be finalized')
   try {
+    requireSupportedUpload(file.original_filename)
     const blob = await gateway.download(file.object_name)
     if (blob.size !== file.expected_byte_count) throw new UploadError(422, 'Uploaded size differs from intent')
     const bytes = new Uint8Array(await blob.arrayBuffer())

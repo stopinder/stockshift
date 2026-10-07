@@ -1,38 +1,25 @@
 import { createClient } from "@supabase/supabase-js";
+import { browserConfigFromEnv } from "./supabase-config";
+export { validateBrowserConfig } from "./supabase-config";
 
-export function validateBrowserConfig(url: string, key: string) {
-  const parsed = new URL(url);
-  if (
-    parsed.protocol !== "http:" ||
-    !["localhost", "127.0.0.1"].includes(parsed.hostname) ||
-    parsed.port !== "54321" ||
-    parsed.pathname !== "/" ||
-    parsed.username ||
-    parsed.password ||
-    parsed.search ||
-    parsed.hash ||
-    !key
-  )
-    throw new Error("Local Supabase configuration required");
-  if (key.startsWith("sb_secret_"))
-    throw new Error("Browser requires a publishable key");
-  if (key.split(".").length === 3) {
-    const payload = JSON.parse(
-      atob(key.split(".")[1]!.replaceAll("-", "+").replaceAll("_", "/")),
-    );
-    if (payload.role !== "anon")
-      throw new Error("Browser requires an anonymous public key");
-  } else if (!key.startsWith("sb_publishable_"))
-    throw new Error("Browser requires a publishable key");
-  return { url, key };
-}
 export function browserClient() {
-  const config = validateBrowserConfig(
-    import.meta.env.VITE_STOCKSHIFT_LOCAL_SUPABASE_URL ?? "",
-    import.meta.env.VITE_STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY ?? "",
-  );
+  // Reference only the allowlisted public values, never the whole Vite env object.
+  const config = browserConfigFromEnv({
+    VITE_STOCKSHIFT_SUPABASE_MODE: import.meta.env
+      .VITE_STOCKSHIFT_SUPABASE_MODE,
+    VITE_STOCKSHIFT_SUPABASE_URL: import.meta.env.VITE_STOCKSHIFT_SUPABASE_URL,
+    VITE_STOCKSHIFT_SUPABASE_PUBLISHABLE_KEY: import.meta.env
+      .VITE_STOCKSHIFT_SUPABASE_PUBLISHABLE_KEY,
+    VITE_STOCKSHIFT_LOCAL_SUPABASE_URL: import.meta.env
+      .VITE_STOCKSHIFT_LOCAL_SUPABASE_URL,
+    VITE_STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY: import.meta.env
+      .VITE_STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY,
+  });
   return createClient(config.url, config.key);
 }
+export const csvOnly =
+  import.meta.env?.VITE_STOCKSHIFT_SUPABASE_MODE === "hosted" ||
+  import.meta.env?.VITE_STOCKSHIFT_CSV_ONLY === "1";
 export type Client = ReturnType<typeof browserClient>;
 export type Product = Record<string, string | null> & {
   supplier_sku: string | null;

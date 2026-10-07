@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createUploadIntent, finalizeUpload, UploadError } from '../server/uploads.ts'
-import { localConfigFromEnv, SupabaseUploadGateway } from '../server/supabase-upload-gateway.ts'
+import { serverConfigFromEnv, SupabaseUploadGateway } from '../server/supabase-upload-gateway.ts'
 
 // Vercel parses JSON bodies; local Vite middleware provides the same request contract.
 export default async function handler(req: IncomingMessage & { body?: unknown }, res: ServerResponse) {
@@ -14,7 +14,7 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     if (!body || typeof body !== 'object' || Array.isArray(body)) throw new UploadError(400, 'Expected JSON body')
     const { action, ...input } = body as Record<string, unknown>
     if (action !== 'create' && action !== 'finalize') throw new UploadError(400, 'Unknown upload action')
-    const gateway = new SupabaseUploadGateway(localConfigFromEnv())
+    const gateway = new SupabaseUploadGateway(serverConfigFromEnv())
     const output = action === 'create'
       ? await createUploadIntent(gateway, authorization.slice(7), input)
       : await finalizeUpload(gateway, authorization.slice(7), input)

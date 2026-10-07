@@ -1,0 +1,13 @@
+# Preview publication must exclude local credentials and diagnostic artifacts.
+.git/
+.tools/
+**/.env
+**/.env.*
+!**/.env.example
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/tests/
+apps/web/e2e/
+services/ocr-serving/

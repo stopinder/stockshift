@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import {
   api,
+  csvOnly,
   importOptions,
   defaultSettings,
   friendlyError,
@@ -489,13 +490,20 @@ onUnmounted(() => {
                 : 'New catalogue file'
             "
             type="file"
-            accept=".pdf,application/pdf,.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            :accept="
+              csvOnly
+                ? '.csv,text/csv'
+                : '.pdf,application/pdf,.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            "
             :disabled="busy || !!files[side]"
             @change="upload(side, $event)"
           /><small role="status">{{
             files[side]
               ? "✓ Verified and ready"
-              : uploadState[side] || "CSV, XLSX or PDF · up to 10 MiB"
+              : uploadState[side] ||
+                (csvOnly
+                  ? "CSV preview · up to 10 MiB"
+                  : "CSV, XLSX or PDF · up to 10 MiB")
           }}</small></label
         >
       </div>

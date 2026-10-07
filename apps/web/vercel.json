@@ -24,5 +24,10 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/csv-hosted-frontend-preview": false
+    }
+  }
 }

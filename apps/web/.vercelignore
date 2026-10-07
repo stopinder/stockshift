@@ -1,0 +1,7 @@
+# Project Root Directory is apps/web. Keep local checks outside the upload.
+.env
+.env.*
+!.env.example
+tests/
+e2e/
+playwright.config.ts
