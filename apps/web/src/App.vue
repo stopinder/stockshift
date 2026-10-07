@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Session } from "@supabase/supabase-js";
 import { browserClient, friendlyError } from "./workflow";
+import LandingPage from "./components/LandingPage.vue";
 import ComparisonList from "./components/ComparisonList.vue";
 import NewComparison from "./components/NewComparison.vue";
 import ComparisonDetail from "./components/ComparisonDetail.vue";
@@ -19,7 +20,21 @@ const session = ref<Session | null>(null),
   error = ref("");
 const email = ref(""),
   password = ref(""),
-  route = ref(location.hash.slice(1) || "/comparisons");
+  route = ref(location.hash.slice(1) || "/");
+const registrationEnabled =
+  import.meta.env.VITE_STOCKSHIFT_REGISTRATION_ENABLED === "1";
+const notice = ref("");
+const workspaceName = ref("");
+const recovering = ref(
+  new URLSearchParams(location.hash.slice(1)).get("type") === "recovery",
+);
+const authMode = computed(() =>
+  route.value === "/signup"
+    ? "signup"
+    : route.value === "/forgot-password"
+      ? "forgot"
+      : "login",
+);
 const tenants = ref<{ id: string; name: string; role: string }[]>([]),
   tenantId = ref("");
 const tenant = computed(() =>
@@ -32,7 +47,7 @@ const comparisonId = computed(
   () => /^\/comparisons\/([0-9a-f-]{36})$/.exec(route.value)?.[1],
 );
 function hashChanged() {
-  route.value = location.hash.slice(1) || "/comparisons";
+  route.value = location.hash.slice(1) || "/";
   error.value = "";
 }
 function navigate(path: string) {
@@ -90,6 +105,92 @@ async function signIn() {
     busy.value = false;
   }
 }
+async function authenticate() {
+  if (!client) return;
+  if (authMode.value === "signup" && !registrationEnabled) return;
+  if (authMode.value === "login") {
+    await signIn();
+    return;
+  }
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+  try {
+    if (authMode.value === "forgot") {
+      const result = await client.auth.resetPasswordForEmail(email.value, {
+        redirectTo: `${location.origin}/#/reset-password`,
+      });
+      if (result.error)
+        throw new Error(
+          "We could not send the reset email. Please try again later.",
+        );
+      notice.value =
+        "If an account exists for this email, you will receive a password reset link.";
+    } else {
+      const result = await client.auth.signUp({
+        email: email.value,
+        password: password.value,
+        options: { emailRedirectTo: `${location.origin}/#/comparisons` },
+      });
+      if (result.error)
+        throw new Error(
+          "Account creation could not be completed. Try signing in if you already have an account.",
+        );
+      password.value = "";
+      if (result.data.session) {
+        session.value = result.data.session;
+        await memberships();
+        navigate("/comparisons");
+      } else
+        notice.value =
+          "Check your email to confirm your account, then sign in to create your workspace.";
+    }
+  } catch (e) {
+    error.value = friendlyError(e);
+  } finally {
+    busy.value = false;
+  }
+}
+async function createWorkspace() {
+  if (!client) return;
+  busy.value = true;
+  error.value = "";
+  try {
+    const result = await client.rpc("create_customer_workspace", {
+      p_name: workspaceName.value.trim(),
+    });
+    if (result.error)
+      throw new Error(
+        "Workspace creation failed. Confirm your email address and try again.",
+      );
+    await memberships();
+    navigate("/comparisons");
+  } catch (e) {
+    error.value = friendlyError(e);
+  } finally {
+    busy.value = false;
+  }
+}
+async function updatePassword() {
+  if (!client || !recovering.value) return;
+  busy.value = true;
+  error.value = "";
+  try {
+    const result = await client.auth.updateUser({ password: password.value });
+    if (result.error)
+      throw new Error(
+        "Password update failed. Request a new reset link and try again.",
+      );
+    password.value = "";
+    recovering.value = false;
+    await memberships();
+    navigate("/comparisons");
+  } catch (e) {
+    error.value = friendlyError(e);
+  } finally {
+    busy.value = false;
+  }
+}
 async function signOut() {
   if (!client) return;
   const result = await client.auth.signOut({ scope: "local" });
@@ -123,6 +224,14 @@ onMounted(async () => {
     }
     const listener = client.auth.onAuthStateChange((event, next) => {
       session.value = next;
+      if (event === "PASSWORD_RECOVERY") {
+        recovering.value = true;
+        navigate("/reset-password");
+      }
+      if (event === "SIGNED_IN")
+        setTimeout(() => {
+          void memberships();
+        }, 0);
       if (event === "SIGNED_OUT") {
         tenants.value = [];
         tenantId.value = "";
@@ -143,7 +252,7 @@ onUnmounted(() => {
     >Skip to content</a
   >
   <header class="app-header">
-    <a class="brand" href="#/comparisons"
+    <a class="brand" href="#/"
       ><span class="brand-mark" aria-hidden="true">S</span>StockShift</a
     >
     <template v-if="session">
@@ -163,42 +272,126 @@ onUnmounted(() => {
         ><button class="quiet" @click="signOut">Sign out</button>
       </div>
     </template>
+    <a v-else class="button quiet" href="#/login">Sign in</a>
   </header>
-  <main id="main" class="app-main" tabindex="-1">
-    <p v-if="!ready" role="status" class="state">Loading your workspace…</p>
+  <main
+    id="main"
+    :class="['app-main', { 'marketing-main': !session && route === '/' }]"
+    tabindex="-1"
+  >
+    <LandingPage
+      v-if="!session && route === '/'"
+      :registration-enabled="registrationEnabled"
+    />
+    <p v-else-if="!ready" role="status" class="state">
+      Loading your workspace…
+    </p>
     <section v-else-if="configError" class="panel auth-panel">
       <h1>Workspace unavailable</h1>
       <p>{{ configError }}</p>
     </section>
     <section v-else-if="!session" class="panel auth-panel">
       <p class="eyebrow">Your catalogue workspace</p>
-      <h1>Welcome back</h1>
-      <p class="muted">Sign in to compare supplier files and review changes.</p>
-      <form @submit.prevent="signIn">
+      <h1>
+        {{
+          authMode === "signup"
+            ? "Create your account"
+            : authMode === "forgot"
+              ? "Reset your password"
+              : "Welcome back"
+        }}
+      </h1>
+      <p class="muted">
+        {{
+          authMode === "signup"
+            ? "Create an account, confirm your email and set up your business workspace."
+            : authMode === "forgot"
+              ? "We’ll email you a secure reset link."
+              : "Sign in to compare supplier files and review changes."
+        }}
+      </p>
+      <p
+        v-if="authMode === 'signup' && !registrationEnabled"
+        role="status"
+        class="alert"
+      >
+        Public registration is not open yet. Existing users can sign in.
+        Customer onboarding is being prepared.
+      </p>
+      <form v-else @submit.prevent="authenticate">
         <label
           >Email<input
             v-model="email"
             type="email"
             autocomplete="username"
-            required /></label
-        ><label
+            required
+        /></label>
+        <label v-if="authMode !== 'forgot'"
           >Password<input
             v-model="password"
             type="password"
-            autocomplete="current-password"
+            :autocomplete="
+              authMode === 'signup' ? 'new-password' : 'current-password'
+            "
+            :minlength="authMode === 'signup' ? 12 : undefined"
+            required
+        /></label>
+        <p v-if="authMode === 'signup'" class="muted">
+          Use at least 12 characters. Email confirmation is required.
+        </p>
+        <p v-if="error" role="alert" class="alert">{{ error }}</p>
+        <p v-if="notice" role="status" class="alert">{{ notice }}</p>
+        <button class="primary" :disabled="busy">
+          {{
+            busy
+              ? "Please wait…"
+              : authMode === "signup"
+                ? "Create account"
+                : authMode === "forgot"
+                  ? "Send reset link"
+                  : "Sign in"
+          }}
+        </button>
+      </form>
+      <p v-if="authMode === 'login'">
+        <a href="#/forgot-password">Forgot your password?</a> ·
+        <a href="#/signup">Create an account</a>
+      </p>
+      <p v-else><a href="#/login">Back to sign in</a></p>
+    </section>
+    <section v-else-if="recovering" class="panel auth-panel">
+      <h1>Choose a new password</h1>
+      <form @submit.prevent="updatePassword">
+        <label
+          >New password<input
+            v-model="password"
+            type="password"
+            autocomplete="new-password"
+            minlength="12"
             required
         /></label>
         <p v-if="error" role="alert" class="alert">{{ error }}</p>
-        <button class="primary" :disabled="busy">
-          {{ busy ? "Signing in…" : "Sign in" }}
-        </button>
+        <button class="primary" :disabled="busy">Save password</button>
       </form>
     </section>
     <template v-else>
       <p v-if="error" role="alert" class="alert">{{ error }}</p>
       <section v-if="!tenant" class="panel state">
-        <h1>No workspace access</h1>
-        <p>Ask a workspace owner to add your account, then sign in again.</p>
+        <h1>Create your business workspace</h1>
+        <p>
+          Your account is signed in. Set up a workspace for your catalogue
+          comparisons.
+        </p>
+        <form class="workspace-create" @submit.prevent="createWorkspace">
+          <label
+            >Business or workspace name<input
+              v-model="workspaceName"
+              maxlength="200"
+              required /></label
+          ><button class="primary" :disabled="busy">
+            {{ busy ? "Creating…" : "Create workspace" }}
+          </button>
+        </form>
       </section>
       <template v-else-if="client"
         ><div class="workspace-line">
