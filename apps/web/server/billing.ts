@@ -222,12 +222,13 @@ export async function applyStripeEvent(
     active[0] ?? relevant.sort((a, b) => b.created - a.created)[0];
   if (!subscription) return;
   const item = subscription.items.data[0]!;
-  const result = await admin.rpc("record_stockshift_subscription", {
+  const result = await admin.rpc("record_stockshift_subscription_v2", {
     p_event: event.id,
     p_tenant: mapping.data.tenant_id,
     p_customer: customer,
     p_subscription: subscription.id,
     p_status: subscription.status,
+    p_period_start: new Date(item.current_period_start * 1000).toISOString(),
     p_period_end: new Date(item.current_period_end * 1000).toISOString(),
     p_live: event.livemode,
   });

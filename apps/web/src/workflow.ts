@@ -63,6 +63,15 @@ export const outcomeLabels: Record<string, string> = {
 };
 export function friendlyError(error: unknown): string {
   const code = (error as { code?: string })?.code;
+  const message = (error as { message?: string })?.message;
+  if (
+    code === "P0001" &&
+    [
+      "Trial comparison allowance reached",
+      "Monthly comparison allowance reached",
+    ].includes(message ?? "")
+  )
+    return "Your workspace has reached its comparison allowance. Existing results remain available; paid plans are not open yet.";
   if (code === "42501")
     return "You do not have access. Choose an authorised workspace or ask its owner.";
   if (
