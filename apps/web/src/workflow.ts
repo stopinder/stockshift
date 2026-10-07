@@ -225,10 +225,28 @@ export async function api(
     ...(input ? { body: JSON.stringify(input) } : {}),
   });
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error ?? "Request failed. Try again.");
+    throw new Error(await apiErrorMessage(response));
   }
   return response;
+}
+export async function apiErrorMessage(response: Response): Promise<string> {
+  const fallback = `Request failed (HTTP ${response.status}). Try again.`;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (/application\/(?:[\w.-]+\+)?json\b/i.test(contentType)) {
+    const body: unknown = await response.json().catch(() => null);
+    if (body && typeof body === "object" && "error" in body
+      && typeof body.error === "string" && body.error.trim())
+      return body.error.slice(0, 500);
+    return fallback;
+  }
+  // Platform crashes bypass the JSON handler. Surface a recognised error code,
+  // without copying arbitrary server output, credentials or HTML into the UI.
+  if (/^text\/plain\b/i.test(contentType)) {
+    const text = await response.text().catch(() => "");
+    const code = text.slice(0, 4096).match(/\b(?:FUNCTION_INVOCATION_FAILED|FUNCTION_INVOCATION_TIMEOUT|FUNCTION_NOT_FOUND|DEPLOYMENT_NOT_FOUND|FUNCTION_PAYLOAD_TOO_LARGE|INTERNAL_SERVER_ERROR)\b/)?.[0];
+    if (code) return `Request failed (HTTP ${response.status}: ${code}).`;
+  }
+  return fallback;
 }
 export async function uploadCsv(
   client: Client,
