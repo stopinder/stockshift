@@ -9,8 +9,12 @@ from uuid import UUID, uuid5
 from stockshift_worker.domain.csv_engine import CsvOptions, parse_csv, reconcile
 from stockshift_worker.domain.xlsx import MIME, WorkbookError, parse_xlsx
 from stockshift_worker.extraction.digital_pdf import PdfError, normalize_pdf
-from stockshift_worker.jobs.gateway import LeaseLost, TransportError
+from stockshift_worker.jobs.gateway import LeaseLost, TransportError, csv_only
 from stockshift_worker.jobs.pdf import extract_job
+
+
+class PreviewFormatError(ValueError):
+    """Hosted preview permits only CSV, without invoking other extractors."""
 
 
 def result_payload(run_id, old, new):
@@ -120,6 +124,8 @@ def run_once(gateway, worker_id):
     stage = "load"
     try:
         with heartbeat(gateway, lease) as lost:
+            if csv_only() and job.get("kind") == "extract_pdf":
+                raise PreviewFormatError("This preview supports CSV only; PDF/OCR are unavailable.")
             if job.get("kind") == "extract_pdf":
                 stage = "extract"
                 extract_job(gateway, job, lease, lost)
@@ -128,6 +134,12 @@ def run_once(gateway, worker_id):
             run = context["run"]
             if run["tenant_id"] != job["tenant_id"] or run["id"] != job["comparison_run_id"]:
                 raise ValueError("Run outside job tenant")
+            if csv_only() and any(
+                context[side]["verified_mime"] != "text/csv" for side in ("current", "incoming")
+            ):
+                raise PreviewFormatError(
+                    "This preview supports CSV only; XLSX/PDF/OCR are unavailable."
+                )
             stage = "parse"
             old = verified_catalogue(
                 gateway,
@@ -161,7 +173,9 @@ def run_once(gateway, worker_id):
     except Exception as exc:
         retryable = not isinstance(exc, (ValueError, TypeError, LookupError, csv.Error))
         failure = {
-            "code": "pdf_timeout"
+            "code": "preview_format_unavailable"
+            if isinstance(exc, PreviewFormatError)
+            else "pdf_timeout"
             if isinstance(exc, TimeoutError)
             else "invalid_pdf_job"
             if isinstance(exc, PdfError) or job.get("kind") == "extract_pdf" and not retryable
@@ -172,8 +186,8 @@ def run_once(gateway, worker_id):
             else "invalid_csv_job",
             "stage": stage,
             "message": str(exc)
-            if isinstance(exc, (PdfError, TimeoutError))
-            else "Local transport unavailable"
+            if isinstance(exc, (PdfError, TimeoutError, PreviewFormatError))
+            else "Supabase transport unavailable"
             if retryable
             else str(exc)
             if isinstance(exc, WorkbookError)

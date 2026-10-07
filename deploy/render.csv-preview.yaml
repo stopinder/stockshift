@@ -1,0 +1,25 @@
+# CSV-only worker release. Applying this Blueprint deploys one paid CPU worker.
+# Use only the approved helios workspace and dedicated StockShift backend.
+previews:
+  generation: off
+services:
+  - type: worker
+    name: stockshift-csv-preview-worker
+    runtime: docker
+    repo: https://github.com/stopinder/stockshift
+    branch: codex/csv-preview-worker
+    region: frankfurt
+    plan: 0.5c-512mb
+    numInstances: 1
+    autoDeployTrigger: off
+    dockerfilePath: services/worker/Dockerfile
+    dockerContext: services/worker
+    envVars:
+      - key: STOCKSHIFT_RUNTIME
+        value: production
+      - key: STOCKSHIFT_SUPABASE_MODE
+        value: hosted
+      - key: STOCKSHIFT_SUPABASE_URL
+        sync: false
+      - key: STOCKSHIFT_SUPABASE_SECRET_KEY
+        sync: false

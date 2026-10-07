@@ -24,5 +24,10 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/csv-preview-worker": false
+    }
+  }
 }

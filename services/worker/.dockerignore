@@ -4,5 +4,8 @@
 !uv.lock
 !src/
 !src/**
+src/stockshift_worker/entrypoints/ocr_connection.py
+src/stockshift_worker/entrypoints/ocr_catalogue_diagnostic.py
+src/stockshift_worker/entrypoints/ocr_catalogue_replay.py
 **/__pycache__/
 **/*.pyc

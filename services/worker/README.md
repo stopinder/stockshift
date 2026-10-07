@@ -1,3 +1,13 @@
+# Durable CSV preview worker
+
+The default `stockshift-worker` command polls durable jobs until stopped.
+Render must use a Docker Background Worker; Node Web Service cannot install/run it.
+See [CSV worker deployment](../../docs/CSV_WORKER_DEPLOYMENT.md).
+Hosted mode permits CSV only and requires explicit server-side Supabase settings.
+`--check` validates imports without credentials/network; `--once` handles at most one job.
+SIGTERM/SIGINT stops new claims, drains the current job with heartbeats, and exits.
+A hard kill recovers through the existing fenced lease expiry/retry lifecycle.
+
 # Local CSV engine
 
 `stockshift_worker.domain.csv_engine` provides `CsvOptions`, `parse_csv`,
@@ -160,7 +170,7 @@ returns success; changed payloads and stale tokens fail. A crash or lost HTTP
 reply cannot create duplicate outputs. There is no exactly-once execution claim.
 
 Transient network/service errors retry after 5, 10, 20... seconds (capped at 300),
-with three attempts by default and an enqueue limit of 1–10. Invalid CSV/settings
+with three attempts by default and an enqueue limit of 1â€“10. Invalid CSV/settings
 or integrity failures are terminal `failed`; retry exhaustion is `dead_letter`.
 Attempts and jobs retain structured code/stage/message/retryability details without
 logging input contents, credentials or HTTP bodies. A heartbeat failure prevents

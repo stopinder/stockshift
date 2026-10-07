@@ -1,7 +1,9 @@
-"""Local Supabase HTTP RPC/Storage client; no hosted URLs or standard credentials."""
+"""Explicit local/hosted Supabase RPC and private Storage; no credential fallback."""
 
+import base64
 import json
 import os
+import re
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlparse
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
@@ -17,7 +19,7 @@ class TransportError(RuntimeError):
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise ValueError("Local API redirects are forbidden")
+        raise ValueError("Supabase API redirects are forbidden")
 
 
 class LocalGateway:
@@ -46,7 +48,10 @@ class LocalGateway:
         )
 
     def request(self, path: str, payload=None, *, blob=False):
-        headers = {"apikey": self.key, "Authorization": f"Bearer {self.key}"}
+        headers = {"apikey": self.key}
+        # Opaque secret keys are not JWTs. Legacy service_role keys require Bearer.
+        if not self.key.startswith("sb_secret_"):
+            headers["Authorization"] = f"Bearer {self.key}"
         data = None
         if payload is not None:
             headers["Content-Type"] = "application/json"
@@ -60,20 +65,20 @@ class LocalGateway:
                 # Bounded files/results; never read an unbounded HTTP response.
                 content = r.read(32 * 1024 * 1024 + 1)
                 if len(content) > 32 * 1024 * 1024:
-                    raise ValueError("Local response exceeds safety limit")
+                    raise ValueError("Supabase response exceeds safety limit")
                 return content if blob else (json.loads(content) if content else None)
         except HTTPError as exc:
             if exc.code >= 500 or exc.code in (408, 429):
-                raise TransportError("Local service unavailable") from None
+                raise TransportError("Supabase service unavailable") from None
             try:
                 code = json.loads(exc.read(4096)).get("code")
             except (ValueError, AttributeError):
                 code = None
             if code == "42501":
                 raise LeaseLost("Worker authorization or lease rejected") from None
-            raise ValueError("Local request rejected") from None
+            raise ValueError("Supabase request rejected") from None
         except (URLError, TimeoutError, ConnectionError) as exc:
-            raise TransportError("Local transport unavailable") from exc
+            raise TransportError("Supabase transport unavailable") from exc
 
     def rpc(self, name: str, **payload):
         if name not in {
@@ -97,3 +102,56 @@ class LocalGateway:
             "/storage/v1/object/authenticated/catalogue-uploads/" + quote(path, safe="/"),
             blob=True,
         )
+
+
+class HostedGateway(LocalGateway):
+    """HTTPS hosted project, explicitly selected; never reads local credentials."""
+
+    def __init__(self, url: str, key: str):
+        parsed = urlparse(url)
+        if (
+            parsed.scheme != "https"
+            or not re.fullmatch(r"[a-z0-9-]+\.supabase\.co", parsed.hostname or "")
+            or parsed.port not in (None, 443)
+            or parsed.username
+            or parsed.password
+            or parsed.path not in ("", "/")
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("Hosted Supabase requires a project HTTPS origin")
+        valid = bool(re.fullmatch(r"sb_secret_[A-Za-z0-9_-]+", key))
+        if not valid:
+            try:
+                parts = key.split(".")
+                claims = json.loads(base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4)))
+                valid = len(parts) == 3 and claims.get("role") == "service_role"
+            except (ValueError, IndexError, AttributeError):
+                valid = False
+        if not valid:
+            raise ValueError("Hosted worker requires a server-only secret/service_role key")
+        self.url, self.key = url.rstrip("/"), key
+        self.opener = build_opener(ProxyHandler({}), NoRedirect())
+
+    @classmethod
+    def from_env(cls):
+        return cls(
+            os.environ.get("STOCKSHIFT_SUPABASE_URL", ""),
+            os.environ.get("STOCKSHIFT_SUPABASE_SECRET_KEY", ""),
+        )
+
+
+def gateway_from_env():
+    mode = os.environ.get("STOCKSHIFT_SUPABASE_MODE", "local")
+    if mode == "hosted":
+        return HostedGateway.from_env()
+    if mode != "local":
+        raise ValueError("Choose local or hosted Supabase mode")
+    return LocalGateway.from_env()
+
+
+def csv_only():
+    return (
+        os.environ.get("STOCKSHIFT_SUPABASE_MODE") == "hosted"
+        or os.environ.get("STOCKSHIFT_CSV_ONLY") == "1"
+    )
