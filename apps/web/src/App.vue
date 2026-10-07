@@ -6,6 +6,8 @@ import LandingPage from "./components/LandingPage.vue";
 import ComparisonList from "./components/ComparisonList.vue";
 import NewComparison from "./components/NewComparison.vue";
 import ComparisonDetail from "./components/ComparisonDetail.vue";
+import WorkspaceAllowance from "./components/WorkspaceAllowance.vue";
+import { useAllowance } from "./allowance";
 let client: ReturnType<typeof browserClient> | null = null;
 const configError = ref("");
 try {
@@ -37,6 +39,7 @@ const authMode = computed(() =>
 );
 const tenants = ref<{ id: string; name: string; role: string }[]>([]),
   tenantId = ref("");
+const allowance = useAllowance(client, tenantId);
 const tenant = computed(() =>
   tenants.value.find((t) => t.id === tenantId.value),
 );
@@ -49,6 +52,7 @@ const comparisonId = computed(
 function hashChanged() {
   route.value = location.hash.slice(1) || "/";
   error.value = "";
+  void allowance.refresh();
 }
 function navigate(path: string) {
   location.hash = path;
@@ -397,11 +401,19 @@ onUnmounted(() => {
         ><div class="workspace-line">
           {{ tenant.name }} <span class="badge">{{ tenant.role }}</span>
         </div>
+        <WorkspaceAllowance
+          :allowance="allowance.value.value"
+          :loading="allowance.loading.value"
+          :error="allowance.error.value"
+          @refresh="allowance.refresh"
+        />
         <NewComparison
           v-if="route === '/comparisons/new' && canEdit"
           :key="tenantId"
           :client="client"
           :tenant-id="tenantId"
+          :can-create="allowance.canCreate.value"
+          :check-allowance="allowance.refresh"
           @created="(id) => navigate(`/comparisons/${id}`)"
         />
         <ComparisonDetail
@@ -410,6 +422,9 @@ onUnmounted(() => {
           :client="client"
           :tenant-id="tenantId"
           :comparison-id="comparisonId"
+          :allowance="allowance.value.value"
+          :allowance-loading="allowance.loading.value"
+          :check-allowance="allowance.refresh"
           :can-edit="canEdit"
         />
         <ComparisonList
@@ -417,6 +432,7 @@ onUnmounted(() => {
           :key="tenantId"
           :client="client"
           :tenant-id="tenantId"
+          :can-create="allowance.canCreate.value"
           :can-edit="canEdit"
         />
       </template>

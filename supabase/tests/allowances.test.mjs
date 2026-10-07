@@ -13,7 +13,9 @@ test("new-customer quotas bind to accepted resources, preserve pilot access and 
       .filter((f) => f.endsWith(".sql"))
       .sort();
     for (const f of migrations.filter(
-      (f) => !f.includes("customer_usage_allowances"),
+      (f) =>
+        f <
+        migrations.find((name) => name.includes("customer_usage_allowances")),
     ))
       await db.exec(await readFile(new URL(f, directory), "utf8"));
     const u = "11111111-1111-4111-8111-111111111111";

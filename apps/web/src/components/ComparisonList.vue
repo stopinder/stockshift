@@ -6,6 +6,7 @@ const props = defineProps<{
   client: Client;
   tenantId: string;
   canEdit: boolean;
+  canCreate: boolean;
 }>();
 const loading = ref(true),
   error = ref("");
@@ -68,7 +69,10 @@ onMounted(load);
         Upload, review and export changes between supplier catalogues.
       </p>
     </div>
-    <a v-if="canEdit" class="button primary" href="#/comparisons/new"
+    <a
+      v-if="canEdit && canCreate"
+      class="button primary"
+      href="#/comparisons/new"
       >+ New comparison</a
     >
   </div>
@@ -84,10 +88,18 @@ onMounted(load);
       Bring your current catalogue and the supplier’s latest CSV. StockShift
       will show what changed.
     </p>
-    <a v-if="canEdit" class="button primary" href="#/comparisons/new"
+    <a
+      v-if="canEdit && canCreate"
+      class="button primary"
+      href="#/comparisons/new"
       >Create comparison</a
     >
-    <p v-else class="muted">Ask an editor to create a comparison.</p>
+    <p v-else-if="!canEdit" class="muted">
+      Ask an editor to create a comparison.
+    </p>
+    <p v-else class="muted">
+      Check your workspace allowance above before creating a comparison.
+    </p>
   </section>
   <section v-else class="panel table-wrap" aria-label="Recent comparisons">
     <table>

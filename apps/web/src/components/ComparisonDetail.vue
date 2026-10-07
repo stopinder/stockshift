@@ -12,6 +12,7 @@ import {
   isNumericUnit,
 } from "../workflow";
 import type { Client, ResultRow } from "../workflow";
+import { canCompare, canUpload, type Allowance } from "../allowance";
 import CsvSettings from "./CsvSettings.vue";
 import PdfSettings from "./PdfSettings.vue";
 import XlsxSettings from "./XlsxSettings.vue";
@@ -20,6 +21,9 @@ const props = defineProps<{
   tenantId: string;
   comparisonId: string;
   canEdit: boolean;
+  allowance: Allowance | null;
+  allowanceLoading: boolean;
+  checkAllowance: () => Promise<Allowance | null>;
 }>();
 const loading = ref(true),
   error = ref(""),
@@ -226,6 +230,10 @@ async function upload(side: string, event: Event) {
   busy.value = true;
   error.value = "";
   try {
+    if (!canUpload(await props.checkAllowance(), file.size))
+      throw new Error(
+        "This file exceeds the remaining workspace allowance, or no comparison allowance remains. Check the allowance above.",
+      );
     const id = await uploadCsv(
       props.client,
       props.tenantId,
@@ -261,6 +269,7 @@ async function upload(side: string, event: Event) {
     error.value = friendlyError(e);
     uploadState.value[side] = "Failed — select the file to retry";
   } finally {
+    await props.checkAllowance();
     busy.value = false;
     input.value = "";
   }
@@ -290,6 +299,10 @@ async function enqueue() {
   busy.value = true;
   error.value = "";
   try {
+    if (!canCompare(await props.checkAllowance()))
+      throw new Error(
+        "No comparison allowance is available. Saved results remain accessible; check the allowance above.",
+      );
     const a = importOptions(
         currentSettings.value,
         files.value.current!.original_filename,
@@ -335,6 +348,7 @@ async function enqueue() {
   } catch (e) {
     error.value = friendlyError(e);
   } finally {
+    await props.checkAllowance();
     busy.value = false;
   }
 }
@@ -537,7 +551,9 @@ onUnmounted(() => {
                 ? '.csv,text/csv'
                 : '.pdf,application/pdf,.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             "
-            :disabled="busy || !!files[side]"
+            :disabled="
+              busy || allowanceLoading || !!files[side] || !canUpload(allowance)
+            "
             @change="upload(side, $event)"
           /><small role="status">{{
             files[side]
@@ -596,7 +612,13 @@ onUnmounted(() => {
         </p>
         <button
           class="primary"
-          :disabled="busy || !files.current || !files.incoming"
+          :disabled="
+            busy ||
+            allowanceLoading ||
+            !canCompare(allowance) ||
+            !files.current ||
+            !files.incoming
+          "
         >
           {{ busy ? "Working…" : "Start comparison" }}
         </button>
@@ -702,263 +724,465 @@ onUnmounted(() => {
         <p v-else-if="!rows.length" class="state">
           {{
             summary.total === 0
-              ? "No product rows were found in these CSV files."
-              : "No results match this filter. Try another SKU or outcome."
-          }}
-        </p>
-        <div v-else class="table-wrap">
-          <table class="results-table">
-            <thead>
-              <tr>
-                <th>Outcome</th>
-                <th>SKU / Description</th>
-                <th>Old cost</th>
-                <th>New cost</th>
-                <th>Exact delta</th>
-                <th>Change %</th>
-                <th>Flags / Review reason</th>
-                <th>Evidence</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in rows" :key="row.id">
-                <td>
-                  <span class="badge" :class="row.primary_outcome">{{
-                    outcomeLabels[row.primary_outcome]
-                  }}</span
-                  ><small v-if="row.decision" class="muted"
-                    >Excluded ·
-                    {{
-                      row.decision === "no_match" ? "no match" : "rejected"
-                    }}</small
-                  >
-                </td>
-                <td class="product-cell">
-                  <strong>{{
-                    row.new_values?.supplier_sku ??
-                    row.old_values?.supplier_sku ??
-                    "Missing SKU"
-                  }}</strong
-                  ><span>{{
-                    row.new_values?.description ??
-                    row.old_values?.description ??
-                    "No description"
-                  }}</span>
-                </td>
-                <td class="number">
-                  {{ row.old_values?.cost_price ?? "—"
-                  }}<small>{{ row.old_values?.currency }}</small>
-                </td>
-                <td class="number">
-                  {{ row.new_values?.cost_price ?? "—"
-                  }}<small>{{ row.new_values?.currency }}</small>
-                </td>
-                <td class="number">{{ row.cost_delta_text ?? "—" }}</td>
-                <td class="number percent-cell">
-                  {{
-                    row.cost_change_percent_text !== null
-                      ? `${row.cost_change_percent_text}%`
-                      : row.percentage_state === "zero_old_cost"
-                        ? "Undefined (old cost 0)"
-                        : "—"
-                  }}
-                </td>
-                <td class="reason-cell">
-                  <span>{{
-                    row.change_flags
-                      .map((flag) => flag.replaceAll("_", " "))
-                      .join(", ") || "—"
-                  }}</span
-                  ><small v-for="reason in row.reasons" :key="reason.code">{{
-                    reason.message
-                  }}</small>
-                </td>
-                <td>
-                  <button class="quiet" @click="inspect(row)">
-                    {{
-                      row.review_state === "pending" && !row.decision
-                        ? "Review"
-                        : "Inspect"
-                    }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination">
-          <span
-            >Showing {{ rows.length ? offset + 1 : 0 }}–{{
-              offset + rows.length
-            }}
-            · 100 per page</span
-          >
-          <div>
-            <button :disabled="!offset || tableLoading" @click="page(-1)">
-              Previous</button
-            ><button :disabled="!hasNextPage || tableLoading" @click="page(1)">
-              Next
-            </button>
-          </div>
-        </div>
-      </section>
-      <p class="hint">
-        “Absent” means absent from this supplied file, not discontinued. Review
-        flagged items before importing updates into your stock system.
-      </p>
-    </template>
-  </template>
-  <p v-else-if="error" class="alert" role="alert">
-    {{ error }} <a href="#/comparisons">Return to comparisons</a>
-  </p>
-  <dialog ref="dialog" class="review-dialog" aria-labelledby="review-heading">
-    <template v-if="selected"
-      ><div class="dialog-heading">
-        <div>
-          <p class="eyebrow">Persisted source evidence</p>
-          <h2 id="review-heading">
-            {{
-              selected.new_values?.supplier_sku ??
-              selected.old_values?.supplier_sku ??
-              "Missing identifier"
-            }}
-          </h2>
-        </div>
-        <button aria-label="Close evidence" @click="dialog?.close()">
-          Close
-        </button>
-      </div>
-      <div class="record-grid">
-        <section
-          v-for="(record, side) in {
-            Current: selected.old_values,
-            New: selected.new_values,
-          }"
-          :key="side"
-        >
-          <h3>{{ side }} record</h3>
-          <p v-if="!record" class="muted">No paired record</p>
-          <dl v-else>
-            <template
-              v-for="field in [
-                'supplier_sku',
-                'description',
-                'cost_price',
-                'currency',
-                'unit',
-                'pack_quantity',
-                'price_basis',
-                'tax_basis',
-              ]"
-              :key="field"
-              ><dt>{{ field.replaceAll("_", " ") }}</dt>
-              <dd>{{ record[field] ?? "—" }}</dd></template
-            >
-          </dl>
-        </section>
-      </div>
-      <div v-if="selected.reasons.length" class="review-banner">
-        <p v-for="reason in selected.reasons" :key="reason.code">
-          {{ reason.message }} <small>({{ reason.code }})</small>
-        </p>
-      </div>
-      <p v-if="candidate" class="hint">
-        Candidate basis:
-        {{
-          candidate.basis === "exact_sku_review"
-            ? "Exact SKU with compatibility issues"
-            : "Unpaired record requiring review"
-        }}. No confidence score is assigned.
-      </p>
-      <details ref="evidenceDetails">
-        <summary>
-          Field provenance ({{ selected.provenance.length }} references)
-        </summary>
-        <div class="table-wrap evidence-table">
-          <table>
-            <thead>
-              <tr>
-                <th>File</th>
-                <th>Page / worksheet / row</th>
-                <th>Column</th>
-                <th>Source value</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="evidence in selected.provenance"
-                :key="evidence.evidence_id"
-              >
-                <td>
-                  {{
-                    files.current?.id === evidence.source_file_id
-                      ? files.current.original_filename
-                      : (files.incoming?.original_filename ?? "Source file")
-                  }}
-                </td>
-                <td class="number">
-                  {{
-                    evidence.locator.page
-                      ? "Page " + evidence.locator.page + " / "
-                      : evidence.locator.sheet
-                        ? evidence.locator.sheet + " / "
-                        : ""
-                  }}{{ evidence.locator.row ?? "—" }}
-                </td>
-                <td>
-                  {{
-                    evidence.locator.column ??
-                    evidence.field_name.replaceAll("_", " ")
-                  }}
-                </td>
-                <td class="source-value">
-                  {{ evidence.raw_text || "(blank)" }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
-      <section v-if="selected.decision" class="success-note">
-        <h3>Decision recorded</h3>
-        <p>{{ selected.decision }} · {{ selected.note }}</p>
-        <small>{{ selected.reviewed_at }}</small>
-      </section>
-      <form
-        v-else-if="selected.review_state === 'pending' && canEdit"
-        class="review-actions"
-        @submit.prevent="resolve('reject')"
-      >
-        <h3>Resolve this review item</h3>
-        <p class="muted">
-          These records cannot be safely approved as updates. Excluding them
-          records your decision and preserves the original evidence.
-        </p>
-        <label
-          >Decision reason<textarea
-            v-model="note"
-            required
-            maxlength="1000"
-            rows="3"
-            placeholder="Explain why this item should be excluded"
-          />
-        </label>
-        <p v-if="reviewError" class="alert" role="alert">{{ reviewError }}</p>
-        <div class="form-actions">
-          <button :disabled="reviewing">Reject candidate · exclude</button
-          ><button
-            v-if="!selected.old_values || !selected.new_values"
-            type="button"
-            :disabled="reviewing"
-            @click="resolve('no_match')"
-          >
-            Confirm no match · exclude
-          </button>
-        </div>
-      </form>
-      <p v-else-if="selected.review_state === 'pending'" class="muted">
-        An editor must resolve this item.
-      </p>
-    </template>
-  </dialog>
-</template>
+              ? "No pro…7631 tokens truncated….75rem 1.2rem;
+    padding: 1rem 16px;
+  }
+  .header-account {
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+  }
+  .header-account select {
+    max-width: 250px;
+  }
+  .app-main {
+    width: calc(100% - 32px);
+    padding-top: 1.5rem;
+  }
+  .page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .page-heading > button,
+  .page-heading > .button {
+    width: 100%;
+  }
+  .form-panel,
+  .auth-panel,
+  .upload-form {
+    padding: 1.25rem;
+  }
+  .source-strip,
+  .upload-grid,
+  .field-grid,
+  .record-grid {
+    grid-template-columns: 1fr;
+  }
+  .table-toolbar {
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+  .search-field {
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .table-toolbar > label:not(.search-field) {
+    flex: 1;
+  }
+  .summary-grid > div {
+    padding: 0.75rem;
+  }
+  .summary-grid strong {
+    font-size: 1.4rem;
+  }
+  .export-hint {
+    text-align: left;
+    margin-top: 0;
+  }
+  .pagination {
+    flex-wrap: wrap;
+  }
+  .app-footer {
+    flex-direction: column;
+    padding: 1rem 16px;
+  }
+  .form-actions > button {
+    white-space: normal;
+  }
+  .auth-panel {
+    margin: 1.5rem auto;
+  }
+}
+.workbook-settings {
+  min-width: 0;
+  margin-top: 1.5rem;
+}
+.workbook-preview {
+  max-height: 240px;
+  margin-top: 1rem;
+}
+.workbook-settings select {
+  max-width: 100%;
+}
+.marketing-main {
+  max-width: 1360px;
+  padding-top: 0;
+}
+.landing-nav {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+}
+.landing-hero {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: center;
+  gap: 50px;
+  padding: 65px 0 75px;
+}
+.hero-copy h1 {
+  font-size: clamp(42px, 4.7vw, 68px);
+  line-height: 1.06;
+  letter-spacing: -0.055em;
+  margin: 22px 0;
+  font-weight: 650;
+}
+.hero-copy em {
+  font-style: normal;
+  color: #34755e;
+}
+.hero-description {
+  max-width: 470px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #56655e;
+}
+.hero-actions {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin: 28px 0 20px;
+}
+.hero-actions .button,
+.landing-close .button {
+  min-height: 48px;
+  padding: 12px 22px;
+}
+.hero-note {
+  font-size: 12px;
+  color: #68736e;
+}
+.product-preview {
+  background: white;
+  border: 1px solid #dce2de;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px #16221d0c;
+  overflow: hidden;
+  scroll-margin-top: 30px;
+}
+.preview-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid #e6eae7;
+}
+.preview-heading p {
+  font-size: 12px;
+  color: #68736e;
+}
+.preview-icon {
+  background: #eaf1ed;
+  color: #174c3c;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+}
+.example-label {
+  font-size: 10px;
+  color: #68736e;
+  border: 1px solid #dce2de;
+  border-radius: 4px;
+  padding: 4px 7px;
+}
+.preview-heading .example-label {
+  margin-left: auto;
+}
+.preview-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 20px;
+  gap: 16px;
+}
+.preview-summary strong {
+  display: block;
+  font-size: 26px;
+  font-weight: 600;
+}
+.preview-summary span {
+  font-size: 11px;
+  color: #68736e;
+}
+.preview-table-wrap {
+  overflow: auto;
+}
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.preview-table th {
+  text-align: left;
+  background: #f7f8f7;
+  font-weight: 500;
+  color: #68736e;
+  padding: 10px 14px;
+}
+.preview-table td {
+  padding: 17px 14px;
+  border-bottom: 1px solid #edf0ee;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.preview-table td strong {
+  display: block;
+  font-weight: 550;
+}
+.preview-table td span {
+  display: block;
+  font-size: 10px;
+  color: #68736e;
+  margin-top: 4px;
+}
+.preview-table .up {
+  color: #a04a42;
+}
+.preview-table .down {
+  color: #2f6b4f;
+}
+.preview-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  font-size: 10px;
+  color: #68736e;
+}
+.export-example {
+  color: #174c3c;
+  font-weight: 600;
+}
+.promise-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 23px 0;
+  border-top: 1px solid #dce2de;
+  border-bottom: 1px solid #dce2de;
+  font-size: 13px;
+  color: #56655e;
+}
+.landing-section {
+  padding: 85px 0;
+  scroll-margin-top: 20px;
+}
+.landing-section h2,
+.trust-section h2,
+.landing-close h2 {
+  font-size: clamp(28px, 3vw, 42px);
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  margin: 18px 0 30px;
+}
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 50px;
+  margin-top: 45px;
+}
+.step-number {
+  display: block;
+  color: #6d8f7e;
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+.steps-grid h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+.steps-grid p,
+.trust-section p,
+.launch-section p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #68736e;
+}
+.trust-section {
+  background: #eaf1ed;
+  padding: 55px;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+}
+.trust-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.trust-section li {
+  padding: 15px 0;
+  border-bottom: 1px solid #d1dfd7;
+}
+.trust-section li:last-child {
+  border: 0;
+}
+.trust-section li strong,
+.trust-section li span {
+  display: block;
+}
+.trust-section li span {
+  color: #68736e;
+  margin-top: 5px;
+}
+.launch-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 90px;
+  align-items: center;
+}
+.launch-card {
+  background: white;
+  border: 1px solid #dce2de;
+  border-radius: 8px;
+  padding: 32px;
+}
+.launch-card h3 {
+  font-size: 22px;
+  margin: 18px 0;
+}
+.launch-card ul {
+  padding-left: 19px;
+  line-height: 2;
+}
+.launch-card p {
+  font-size: 12px;
+  margin: 20px 0;
+}
+.launch-card .button {
+  width: 100%;
+}
+.faq-section {
+  border-top: 1px solid #dce2de;
+}
+.faq-section details {
+  padding: 20px 0;
+  border-bottom: 1px solid #dce2de;
+}
+.faq-section summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+}
+.faq-section details p {
+  max-width: 800px;
+  color: #68736e;
+  margin-top: 15px;
+}
+.landing-close {
+  text-align: center;
+  padding: 65px 20px 95px;
+}
+.workspace-create {
+  max-width: 420px;
+  margin: 25px auto;
+  text-align: left;
+  display: grid;
+  gap: 15px;
+}
+@media (max-width: 1000px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding-top: 30px;
+  }
+  .hero-copy h1 {
+    font-size: 56px;
+  }
+  .hero-description {
+    max-width: 650px;
+  }
+  .trust-section,
+  .launch-section {
+    gap: 35px;
+  }
+  .steps-grid {
+    gap: 25px;
+  }
+}
+@media (max-width: 650px) {
+  .landing-nav {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .landing-nav .quiet {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .landing-nav .button {
+    font-size: 12px;
+  }
+  .hero-copy h1 {
+    font-size: 42px;
+  }
+  .hero-description {
+    font-size: 15px;
+  }
+  .promise-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font-size: 12px;
+  }
+  .steps-grid,
+  .trust-section,
+  .launch-section {
+    grid-template-columns: 1fr;
+  }
+  .trust-section {
+    padding: 28px 22px;
+  }
+  .landing-section {
+    padding: 55px 0;
+  }
+  .preview-heading {
+    flex-wrap: wrap;
+    padding: 15px;
+  }
+  .preview-heading .example-label {
+    margin-left: 0;
+  }
+  .preview-footer {
+    flex-direction: column;
+  }
+  .preview-table td,
+  .preview-table th {
+    padding: 12px 10px;
+  }
+  .launch-card {
+    padding: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
+.allowance-panel {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.allowance-panel p {
+  margin: 0.4rem 0;
+  overflow-wrap: anywhere;
+}
+.allowance-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.allowance-count strong {
+  color: #174c3c;
+  font-variant-numeric: tabular-nums;
+}
+.allowance-warning {
+  color: #936b27;
+  font-weight: 600;
+}
