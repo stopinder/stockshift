@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { CsvSettings } from "../workflow";
+import { isNumericUnit, type CsvSettings } from "../workflow";
+import { useId } from "vue";
+const unitHintId = useId();
 const settings = defineModel<CsvSettings>({ required: true });
 defineProps<{
   side: string;
@@ -85,13 +87,23 @@ defineProps<{
           placeholder="GBP"
       /></label>
       <label
-        >Unit<input
+        >Unit of measure<input
           v-model="settings.unit"
+          aria-label="Unit"
+          :aria-describedby="unitHintId"
+          :aria-invalid="isNumericUnit(settings.unit) || undefined"
           :required="!xlsx || !settings.unitColumn"
           :disabled="xlsx && !!settings.unitColumn"
           maxlength="100"
           placeholder="each"
-      /></label>
+        /><small :id="unitHintId" class="hint"
+          >How the product is sold: each, box or kg. Enter the number in Pack
+          quantity.</small
+        >
+        <small v-if="isNumericUnit(settings.unit)" class="alert" role="alert"
+          >Use a unit name, not a quantity.</small
+        ></label
+      >
       <label
         >Pack quantity<input
           v-model="settings.pack"

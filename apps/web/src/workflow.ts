@@ -114,6 +114,10 @@ export function defaultSettings(): CsvSettings {
   };
 }
 export function csvOptions(s: CsvSettings, mappedFields: string[] = []) {
+  if (!mappedFields.includes("unit") && isNumericUnit(s.unit))
+    throw new Error(
+      "Unit means how the product is sold, such as each, box or kg. Put numbers such as 1 in Pack quantity.",
+    );
   if (
     !s.sku.trim() ||
     !s.price.trim() ||
@@ -164,6 +168,43 @@ export function csvOptions(s: CsvSettings, mappedFields: string[] = []) {
     tax_basis: s.taxBasis,
     currency_symbol: s.symbol || null,
   };
+}
+export function isNumericUnit(unit: string): boolean {
+  return /^[+-]?(?:[0-9]+(?:[.,][0-9]*)?|[.,][0-9]+)(?:[eE][+-]?[0-9]+)?$/.test(
+    unit.trim(),
+  );
+}
+export function savedImportSettings(configuration: Record<string, unknown>) {
+  const side = (name: string): Record<string, unknown> => {
+    const value = configuration[name];
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  };
+  const value = (options: Record<string, unknown>, key: string): string => {
+    const raw = options[key];
+    if (key === "thousands_separator" && (raw === null || raw === ""))
+      return "None";
+    if (raw === "\t") return "Tab";
+    if (raw === " ") return "Space";
+    return typeof raw === "string" && raw ? raw : "Not set";
+  };
+  const current = side("current"),
+    incoming = side("incoming");
+  return [
+    ["Currency", "currency"],
+    ["Unit of measure", "unit"],
+    ["Pack quantity", "pack_quantity"],
+    ["Price basis", "price_basis"],
+    ["Tax basis", "tax_basis"],
+    ["Delimiter", "delimiter"],
+    ["Decimal separator", "decimal_separator"],
+    ["Thousands separator", "thousands_separator"],
+  ].map(([label, key]) => ({
+    label: label!,
+    current: value(current, key!),
+    incoming: value(incoming, key!),
+  }));
 }
 export function importOptions(s: CsvSettings, filename: string) {
   if (/\.pdf$/i.test(filename)) {
@@ -234,8 +275,13 @@ export async function apiErrorMessage(response: Response): Promise<string> {
   const contentType = response.headers.get("content-type") ?? "";
   if (/application\/(?:[\w.-]+\+)?json\b/i.test(contentType)) {
     const body: unknown = await response.json().catch(() => null);
-    if (body && typeof body === "object" && "error" in body
-      && typeof body.error === "string" && body.error.trim())
+    if (
+      body &&
+      typeof body === "object" &&
+      "error" in body &&
+      typeof body.error === "string" &&
+      body.error.trim()
+    )
       return body.error.slice(0, 500);
     return fallback;
   }
@@ -243,7 +289,11 @@ export async function apiErrorMessage(response: Response): Promise<string> {
   // without copying arbitrary server output, credentials or HTML into the UI.
   if (/^text\/plain\b/i.test(contentType)) {
     const text = await response.text().catch(() => "");
-    const code = text.slice(0, 4096).match(/\b(?:FUNCTION_INVOCATION_FAILED|FUNCTION_INVOCATION_TIMEOUT|FUNCTION_NOT_FOUND|DEPLOYMENT_NOT_FOUND|FUNCTION_PAYLOAD_TOO_LARGE|INTERNAL_SERVER_ERROR)\b/)?.[0];
+    const code = text
+      .slice(0, 4096)
+      .match(
+        /\b(?:FUNCTION_INVOCATION_FAILED|FUNCTION_INVOCATION_TIMEOUT|FUNCTION_NOT_FOUND|DEPLOYMENT_NOT_FOUND|FUNCTION_PAYLOAD_TOO_LARGE|INTERNAL_SERVER_ERROR)\b/,
+      )?.[0];
     if (code) return `Request failed (HTTP ${response.status}: ${code}).`;
   }
   return fallback;

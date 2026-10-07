@@ -8,6 +8,8 @@ import {
   friendlyError,
   outcomeLabels,
   uploadCsv,
+  savedImportSettings,
+  isNumericUnit,
 } from "../workflow";
 import type { Client, ResultRow } from "../workflow";
 import CsvSettings from "./CsvSettings.vue";
@@ -34,6 +36,7 @@ const run = ref<{
   status: string;
   current_file_id: string;
   incoming_file_id: string;
+  configuration: Record<string, unknown>;
 } | null>(null);
 const job = ref<{
   status: string;
@@ -67,6 +70,16 @@ const candidate = ref<{ basis: string; status: string } | null>(null);
 const evidenceDetails = ref<HTMLDetailsElement | null>(null);
 const displayState = computed(
   () => job.value?.status ?? run.value?.status ?? "draft",
+);
+const savedSettings = computed(() =>
+  run.value ? savedImportSettings(run.value.configuration) : [],
+);
+const numericSavedUnit = computed(() =>
+  savedSettings.value.some(
+    (row) =>
+      row.label === "Unit of measure" &&
+      (isNumericUnit(row.current) || isNumericUnit(row.incoming)),
+  ),
 );
 const exportReady = computed(
   () => run.value?.status === "succeeded" && summary.value?.unresolved === 0,
@@ -121,7 +134,7 @@ async function load(initial = false) {
     >;
     const latest = await props.client
       .from("comparison_runs")
-      .select("id,status,current_file_id,incoming_file_id")
+      .select("id,status,current_file_id,incoming_file_id,configuration")
       .eq("tenant_id", props.tenantId)
       .eq("comparison_id", props.comparisonId)
       .order("created_at", { ascending: false })
@@ -465,6 +478,35 @@ onUnmounted(() => {
         }}</strong>
       </div>
     </section>
+    <details v-if="run" class="panel">
+      <summary>Saved import settings</summary>
+      <p class="hint">
+        These are the settings used for this comparison and its export.
+      </p>
+      <p v-if="numericSavedUnit" class="alert" role="alert">
+        This comparison used a number as its unit of measure. Unit should
+        describe how the product is sold, such as each, box or kg; Pack quantity
+        holds the number. The saved results have not been changed.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>Current catalogue</th>
+              <th>New supplier catalogue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in savedSettings" :key="row.label">
+              <th scope="row">{{ row.label }}</th>
+              <td>{{ row.current }}</td>
+              <td>{{ row.incoming }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
     <form
       v-if="!run && canEdit"
       class="panel upload-form"
