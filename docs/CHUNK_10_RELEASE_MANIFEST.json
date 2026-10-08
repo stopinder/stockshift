@@ -1,10 +1,10 @@
 {
-  "scope": "Chunks 4–9 and required CSV baseline dependencies, reconciled in Chunk 11 and comparison-only allowance fix verified in Chunk 12; preparation only",
+  "scope": "Chunks 4–9, required CSV dependencies, corrected comparison accounting and verified Preview workspace/subscription baseline reconciled in Chunk 14; preparation only",
   "branch": "codex/preview-cpu-pdf-release",
   "base": "65000541282060083cd8b32721cb80e2a0e0abab",
   "originalMain": "b496e41b66747e9275c9a6733cdf9772117ea58e",
   "cachedOriginMain": "7a14fbe09cc7aed025e2cc2ee6e12624c80df0d9",
-  "remoteState": "Cached origin/main incorporated by local merge; no fetch/push or hosted identity verification.",
+  "remoteState": "Exact Preview commits fetched from GitHub in Chunk 14; no push, hosted database access/change or deployment.",
   "includedChangedFiles": [
     ".env.example",
     ".gitattributes",
@@ -30,21 +30,26 @@
     "apps/web/server/uploads.ts",
     "apps/web/src/App.vue",
     "apps/web/src/allowance.ts",
+    "apps/web/src/billing.ts",
     "apps/web/src/components/ComparisonDetail.vue",
     "apps/web/src/components/ComparisonList.vue",
     "apps/web/src/components/CsvSettings.vue",
     "apps/web/src/components/LandingPage.vue",
     "apps/web/src/components/NewComparison.vue",
+    "apps/web/src/components/NewWorkspace.vue",
     "apps/web/src/components/PdfSettings.vue",
     "apps/web/src/components/WorkspaceAllowance.vue",
+    "apps/web/src/components/WorkspaceBilling.vue",
     "apps/web/src/pdf-capabilities.ts",
     "apps/web/src/pdf-inspection.ts",
     "apps/web/src/styles/main.css",
     "apps/web/src/supabase-config.ts",
     "apps/web/src/workflow.ts",
+    "apps/web/src/workspaces.ts",
     "apps/web/tests/allowance.test.ts",
     "apps/web/tests/api-errors.test.ts",
     "apps/web/tests/api-runtime.test.ts",
+    "apps/web/tests/billing-ui.test.ts",
     "apps/web/tests/billing.test.ts",
     "apps/web/tests/csv-preview.test.ts",
     "apps/web/tests/deployment-config.test.ts",
@@ -53,12 +58,15 @@
     "apps/web/tests/pdf-endpoint.test.ts",
     "apps/web/tests/pdf-inspection.test.ts",
     "apps/web/tests/uploads.test.ts",
+    "apps/web/tests/workspaces.test.ts",
     "apps/web/vercel.json",
     "apps/web/vite.config.ts",
     "docs/CHUNK_10_PREVIEW_RELEASE.md",
     "docs/CHUNK_10_RELEASE_MANIFEST.json",
     "docs/CHUNK_11_BASELINE_RECONCILIATION.md",
     "docs/CHUNK_12_ALLOWANCE_ACCOUNTING.md",
+    "docs/CHUNK_13_ISOLATED_PREVIEW_AUDIT.md",
+    "docs/CHUNK_14_PREVIEW_BASELINE.md",
     "docs/CHUNK_4_CPU_PDF_INSPECTION.md",
     "docs/CHUNK_5_PDF_UPLOAD_API_INSPECTION.md",
     "docs/CHUNK_6_PDF_INSPECTION_UI.md",
@@ -68,6 +76,8 @@
     "docs/CHUNK_9_HOSTED_CPU_PDF_CODE.md",
     "docs/COMMERCIAL_LAUNCH_SPRINT.md",
     "docs/CUSTOMER_ALLOWANCE_MILESTONE.md",
+    "docs/PREVIEW_BILLING_MILESTONE.md",
+    "docs/WORKSPACE_CREATION_MILESTONE.md",
     "package-lock.json",
     "package.json",
     "scripts/seed-local.mjs",
@@ -104,6 +114,7 @@
     "supabase/migrations/20261007133637_stripe_billing_foundation.sql",
     "supabase/migrations/20261007135419_customer_usage_allowances.sql",
     "supabase/migrations/20261007153016_workspace_allowance_status.sql",
+    "supabase/migrations/20261008141550_business_workspace_creation.sql",
     "supabase/migrations/20261008182416_cpu_pdf_inspection.sql",
     "supabase/migrations/20261008194938_upload_verification_recovery.sql",
     "supabase/migrations/20261008201320_hosted_cpu_pdf_capabilities.sql",
@@ -121,6 +132,7 @@
     "supabase/tests/security.test.mjs",
     "supabase/tests/upload-recovery.local.ts",
     "supabase/tests/upload.local.ts",
+    "supabase/tests/workspace-creation.test.mjs",
     "tests/fixtures/catalogue-benchmark/expected-results.json",
     "tests/fixtures/catalogue-benchmark/synthetic/expected-changed-products.csv",
     "tests/fixtures/catalogue-benchmark/synthetic/new-catalogue.csv",
@@ -276,6 +288,12 @@
       "fromCsvBaseline": true
     },
     {
+      "path": "supabase/migrations/20261008141550_business_workspace_creation.sql",
+      "sha256": "e5ee73e1176c92e43203fb0374451e69ee6ff3c9022db3f3eec3357d5578eddc",
+      "trackedAtBase": false,
+      "fromVerifiedPreview": true
+    },
+    {
       "path": "supabase/migrations/20261008182416_cpu_pdf_inspection.sql",
       "sha256": "beb5fe68a07ba6ed7551a6a21cc539a46f50faf9fdb9322321cbb499f7e85b07",
       "trackedAtBase": false,
@@ -303,9 +321,9 @@
   "flagsRemainOff": true,
   "priorReleaseCommit": "ab004a1dd73b6672bf75f6335091d7aef7d7df0b",
   "reconciledCodeCommit": "4fdf7f4302c2f0439374a4175c179b0342e3250e",
-  "csvBaseline": "7a14fbe09cc7aed025e2cc2ee6e12624c80df0d9",
+  "csvBaseline": "1423916cbc1d0b4f5e2e858f62747edcc6882d71",
   "releaseRef": "refs/heads/codex/preview-cpu-pdf-release",
-  "releaseCommitResolution": "Resolve releaseRef for final release documentation commit; its parent allowanceAccountingCodeCommit contains the verified Chunk 12 code.",
+  "releaseCommitResolution": "Resolve releaseRef for final Chunk 14 documentation commit; chunk14CodeCommit identifies the tested code.",
   "preservation": {
     "originalRoot": "C:/Users/Rob/WebstormProjects/stockshift",
     "originalRootBranch": "codex/chunk11-preserved-work",
@@ -444,9 +462,10 @@
     "supabase/tests/security.test.mjs"
   ],
   "remainingCompatibilityIssues": [
-    "Old seven-argument finalizers remain incompatible with upload lease migration; shared Production database requires coordinated upgrade.",
-    "Actual deployed versions/migration history/infrastructure unknown; isolated Preview provisioning/configuration, approved migration/worker/API rollout and real hosted acceptance remain required.",
-    "OCR processing remains intentionally disabled; no scanned-document processing is included."
+    "Shared Production/Preview hosted ledger has five source-version divergences; applied-statement equivalence and any explicit existing-database upgrade path remain unverified. Never replay/rename applied migrations.",
+    "Old seven-argument finalizers require coordinated upgrade with leased schema; shared Production is excluded from isolated Preview rollout.",
+    "Isolated resources, quota/cost decision, source-publication automatic-deploy boundary, pinned worker target/image/advertisements and real hosted acceptance remain required.",
+    "OCR intentionally disabled; designated Stripe test and additional unsubscribed business workspaces cannot process catalogues. Payments remain off for PDF Preview."
   ],
   "allowanceAccountingCodeCommit": "826f2fd9431889cde32202d736629fdfda882544",
   "chunk12StartingCommit": "f18b829175c7ad78c636ae8b200cc27e54fcb609",
@@ -479,6 +498,87 @@
     "localMigrationCount": 16,
     "hostedAccess": false,
     "hostedCapabilitiesEnabled": false,
+    "ocrCalls": 0
+  },
+  "chunk14StartingCommit": "82fcaa29b20f8066702b29c4d0b6f34131837b4a",
+  "chunk14CodeCommit": "3b04b2341117ba20760d6a34fb4515c0be5cdad6",
+  "incorporatedPreviewCommits": [
+    "afb645e3d536aa7e8ab1995b7ef85ebb60cdb1f0",
+    "1423916cbc1d0b4f5e2e858f62747edcc6882d71"
+  ],
+  "chunk14ChangedFiles": [
+    "apps/web/server/billing.ts",
+    "apps/web/src/App.vue",
+    "apps/web/src/allowance.ts",
+    "apps/web/src/billing.ts",
+    "apps/web/src/components/NewWorkspace.vue",
+    "apps/web/src/components/WorkspaceAllowance.vue",
+    "apps/web/src/components/WorkspaceBilling.vue",
+    "apps/web/src/styles/main.css",
+    "apps/web/src/workspaces.ts",
+    "apps/web/tests/billing-ui.test.ts",
+    "apps/web/tests/billing.test.ts",
+    "apps/web/tests/workspaces.test.ts",
+    "apps/web/vite.config.ts",
+    "docs/CHUNK_10_PREVIEW_RELEASE.md",
+    "docs/CHUNK_10_RELEASE_MANIFEST.json",
+    "docs/CHUNK_13_ISOLATED_PREVIEW_AUDIT.md",
+    "docs/CHUNK_14_PREVIEW_BASELINE.md",
+    "docs/PREVIEW_BILLING_MILESTONE.md",
+    "docs/WORKSPACE_CREATION_MILESTONE.md",
+    "scripts/verify-supabase-local.mjs",
+    "supabase/migrations/20261008141550_business_workspace_creation.sql",
+    "supabase/tests/workspace-creation.test.mjs"
+  ],
+  "migrationHistoryDivergence": [
+    {
+      "source": "20261007132615",
+      "hosted": "20261007134233",
+      "equivalenceVerified": false
+    },
+    {
+      "source": "20261007133637",
+      "hosted": "20261007134242",
+      "equivalenceVerified": false
+    },
+    {
+      "source": "20261007135419",
+      "hosted": "20261007140327",
+      "equivalenceVerified": false
+    },
+    {
+      "source": "20261007153016",
+      "hosted": "20261007160303",
+      "equivalenceVerified": false
+    },
+    {
+      "source": "20261008141550",
+      "hosted": "20261008142412",
+      "equivalenceVerified": false
+    }
+  ],
+  "freshDatabaseMigrationPolicy": "Apply 17 source files in lexical order only to a verified fresh isolated database. Preserve hosted history; no automatic ledger repair or same-name replay.",
+  "chunk14Verification": {
+    "nativeLocalTests": 175,
+    "focusedNativeCases": 6,
+    "webTests": 114,
+    "contractTests": 54,
+    "embeddedSqlTestsInFullCheck": 57,
+    "finalWorkspaceEmbeddedCases": 5,
+    "finalEmbeddedCoverage": 58,
+    "typecheck": true,
+    "build": true,
+    "contractsGeneration": true,
+    "formatting": true,
+    "priorMigrationHashesUnchanged": 16,
+    "newMigrationMatchesPreviewSource": true,
+    "persistentLocalMigrations": 16,
+    "newMigrationNativeTransactionsRolledBack": true,
+    "preservedPreExistingRows": 10996,
+    "preservedOriginalWorkingFiles": 240,
+    "pendingJobs": 0,
+    "browserRerun": false,
+    "hostedDatabaseAccess": false,
     "ocrCalls": 0
   }
 }

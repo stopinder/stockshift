@@ -1,6 +1,6 @@
 # Chunk 10 — reviewed local release and proposed Preview rollout
 
-Prepared October 8, 2026; updated after Chunk 12 accounting verification. No push, hosted discovery, hosted migration, deployment,
+Prepared October 8, 2026; updated after Chunk 14 Preview baseline reconciliation. Chunk 13 performed read-only hosted discovery. No push, hosted migration, deployment,
 capability enablement, OCR request, GPU operation or billing change was performed.
 This is a review candidate, **not approval to deploy**.
 
@@ -50,12 +50,60 @@ already-verified trailing blank lines of the two dependency migrations without
 editing their SQL. The original Chunk 10 commit included 84 changed/new files. The current complete
 inventory, including the CSV baseline, is in the updated manifest.
 
-## Baseline and Production compatibility blockers
+## Current baseline — Chunk 14 supersedes earlier uncertainty
+
+The verified Preview commits `afb645e3d536aa7e8ab1995b7ef85ebb60cdb1f0` and
+`1423916cbc1d0b4f5e2e858f62747edcc6882d71` are incorporated locally on top of
+`82fcaa2`. Their workspace/subscription safeguards, billing status/lifecycle
+guards and dependent interface are retained. Payments remain disabled in the
+proposed PDF Preview; no price, subscription entitlement or provider configuration
+was changed. CPU flags, upload leases, review/confirmation and comparison-only
+accounting remain intact. See [Chunk 14 evidence](CHUNK_14_PREVIEW_BASELINE.md).
+
+Use the exact resource/configuration plan in [Chunk 13 audit](CHUNK_13_ISOLATED_PREVIEW_AUDIT.md),
+with the updated release ref and **17** fresh-database migrations in this manifest.
+The baseline decision in that historical audit is now resolved. Production and
+existing Preview still share a database; neither is the rollout target.
+
+Keep `STOCKSHIFT_BILLING_ENABLED=0` and omit Stripe configuration in the dedicated
+PDF Preview. Keep `VITE_STOCKSHIFT_BILLING_TEST_MODE` absent/off. Acceptance must
+use a new confirmed account's first ordinary business trial, not a designated
+Stripe test workspace (which cannot process catalogues), an existing owner's
+second workspace, or fabricated subscription credentials. Additional businesses
+remain subscription-locked, including PDF preparation. Disabled billing status
+must make no Stripe request. Rollback must retain the new trial ledger and
+subscription gates as well as comparison-only accounting.
+
+### Migration history boundary
+
+Fresh isolated databases execute all 17 source files in lexical order. The new
+business workspace file remains byte-identical to Preview source at
+`20261008141550`, after allowance status and before CPU inspection. Existing
+migration files were neither renamed nor edited. Hosted applied versions differ:
+onboarding `20261007134233` vs source `20261007132615`; billing
+`20261007134242` vs `20261007133637`; allowances `20261007140327` vs
+`20261007135419`; status `20261007160303` vs `20261007153016`; business
+`20261008142412` vs `20261008141550`. This is a documented divergence, not
+permission to replay or repair the shared ledger. A future existing-database
+upgrade must compare exact applied statements and schema semantics, preserve all
+applied files, explicitly approve any metadata mapping only after equivalence
+is proven, and use new forward migrations for actual differences. No hosted
+statement equivalence or executable Production upgrade path is claimed here.
+
+The future sequence stays **fresh isolated migrations → pinned CPU worker →
+dedicated Vercel Preview → separately approved matching capabilities → acceptance**.
+Before any later push, resolve the existing Vercel project's automatic-deployment
+boundary so the release cannot be built with shared Production credentials.
+Costs, resource eligibility, effective worker target/image and hosted acceptance
+remain provisioning decisions; no such actions occurred in Chunk 14.
+
+## Historical baseline and Production compatibility findings
 
 The newer CSV baseline `7a14fbe09cc7aed025e2cc2ee6e12624c80df0d9` is now incorporated by local merge
 commit `4fdf7f4302c2f0439374a4175c179b0342e3250e`, whose parents are Chunk 10 `ab004a1` and that baseline.
-This resolves the known seven-commit code divergence. No fetch was performed, so
-the actual deployed version and whether a newer remote tip exists remain unknown.
+This resolved the seven-commit code divergence in Chunk 11. Chunk 13 subsequently
+verified hosted source identities, and Chunk 14 fetched and incorporated the two
+newer Preview commits described above.
 The branch retains CPU inspection/extraction flags, persisted API, leased upload
 finalization, worker advertisement checks and explicit revision gates.
 
@@ -76,9 +124,10 @@ policy, retry fencing and idempotency are unchanged. The six merged desktop/mobi
 cases passed using fresh non-exempt trial workspaces, local Supabase and the CPU
 worker. See [Chunk 12 evidence](CHUNK_12_ALLOWANCE_ACCOUNTING.md).
 
-The four baseline migrations below are now in the release, but their actual
-applied state remains unknown. Do not remove, replay or alter them on an existing
-database. The ledger must be reconciled against all sixteen files.
+The four baseline migrations below are in the release; Chunk 13 identified their
+different hosted version numbers. Statement equivalence remains unverified.
+Do not remove, replay or alter them on an existing database. The fresh isolated
+history consists of all seventeen files below.
 
 **Preview must use an isolated StockShift database and queue.** Vercel Preview
 environment scope does not isolate a Supabase database. Applying these migrations
@@ -101,31 +150,32 @@ until its compatible API is deployed. Flags cannot fix the old CSV API conflict.
 
 ## Ordered migration review
 
-Hosted applied history is **unknown**, so these are candidate prerequisites,
-not a claim that sixteen migrations are pending there. Apply only verified missing
+The audited shared hosted history is documented above, with unresolved semantic
+equivalence; this is not a claim that seventeen migrations are pending there. Apply only verified missing
 versions, in this order, matching the committed-byte hashes in the manifest.
 Five migrations were included by Chunk 10 and four are inherited from the
 reconciled CSV baseline; six already exist in the original base. Chunk 12 adds one
 forward accounting migration; no previously published SQL is edited or duplicated.
 
-| Order/version                                           | Purpose and compatibility effect                                                                        |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 1 `20261005141354_tenant_upload_foundations`            | Tenant/RLS/private Storage and upload RPC foundation; never replay initial schema.                      |
-| 2 `20261005155832_durable_csv_jobs`                     | Durable CSV jobs, results and fenced claim/load/complete/fail RPCs.                                     |
-| 3 `20261005175654_persistent_csv_review`                | Persistent review events and authorized export gates.                                                   |
-| 4 `20261005184752_xlsx_ingestion`                       | XLSX source constraints and comparison functions; CSV signatures retained.                              |
-| 5 `20261005191747_digital_pdf_corrections`              | PDF extraction/correction revisions, queue constraints and confirmed-PDF comparison gates.              |
-| 6 `20261005220000_paddleocr_pages`                      | Private OCR cache/provider RPC dependency; no provider execution or OCR enablement.                     |
-| 7 `20261006194510_catalogue_layout_review`              | Explicit PDF layout/revision validation; direct digital configuration retained.                         |
-| 8 `20261006203229_catalogue_pricing_basis_review`       | Supplier cost-basis/retail review safeguards; unrelated to subscription pricing.                        |
-| 9 `20261007132615_customer_workspace_onboarding`        | CSV baseline: confirmed customer workspace bootstrap with actual authorization.                         |
-| 10 `20261007133637_stripe_billing_foundation`           | CSV baseline: inactive account/subscription/event foundations, unchanged.                               |
-| 11 `20261007135419_customer_usage_allowances`           | CSV baseline: allowance counters/triggers/period rules unchanged; job trigger narrowed by migration 16. |
-| 12 `20261007153016_workspace_allowance_status`          | CSV baseline: read-only member-scoped allowance projection, unchanged.                                  |
-| 13 `20261008182416_cpu_pdf_inspection`                  | CPU inspection evidence/job kind and shared claim/fail functions; CSV signatures retained.              |
-| 14 `20261008194938_upload_verification_recovery`        | Private upload leases/eight-argument finalizer; old unfenced finish/fail rejected.                      |
-| 15 `20261008201320_hosted_cpu_pdf_capabilities`         | Private service-only worker registry; required even for upgraded 0/0 hosted workers.                    |
-| 16 `20261008213000_comparison_job_allowance_accounting` | Only actual comparisons consume comparison allowance; upload reservations unchanged.                    |
+| Order/version                                           | Purpose and compatibility effect                                                                                                 |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1 `20261005141354_tenant_upload_foundations`            | Tenant/RLS/private Storage and upload RPC foundation; never replay initial schema.                                               |
+| 2 `20261005155832_durable_csv_jobs`                     | Durable CSV jobs, results and fenced claim/load/complete/fail RPCs.                                                              |
+| 3 `20261005175654_persistent_csv_review`                | Persistent review events and authorized export gates.                                                                            |
+| 4 `20261005184752_xlsx_ingestion`                       | XLSX source constraints and comparison functions; CSV signatures retained.                                                       |
+| 5 `20261005191747_digital_pdf_corrections`              | PDF extraction/correction revisions, queue constraints and confirmed-PDF comparison gates.                                       |
+| 6 `20261005220000_paddleocr_pages`                      | Private OCR cache/provider RPC dependency; no provider execution or OCR enablement.                                              |
+| 7 `20261006194510_catalogue_layout_review`              | Explicit PDF layout/revision validation; direct digital configuration retained.                                                  |
+| 8 `20261006203229_catalogue_pricing_basis_review`       | Supplier cost-basis/retail review safeguards; unrelated to subscription pricing.                                                 |
+| 9 `20261007132615_customer_workspace_onboarding`        | CSV baseline: confirmed customer workspace bootstrap with actual authorization.                                                  |
+| 10 `20261007133637_stripe_billing_foundation`           | CSV baseline: inactive account/subscription/event foundations, unchanged.                                                        |
+| 11 `20261007135419_customer_usage_allowances`           | CSV baseline: allowance counters/triggers/period rules unchanged; job trigger narrowed by migration 17.                          |
+| 12 `20261007153016_workspace_allowance_status`          | CSV baseline: read-only member-scoped allowance projection, unchanged.                                                           |
+| 13 `20261008141550_business_workspace_creation`         | One-trial ledger, bounded/idempotent business creation, member-only allowance status and subscription gates on all uploads/jobs. |
+| 14 `20261008182416_cpu_pdf_inspection`                  | CPU inspection evidence/job kind and shared claim/fail functions; CSV signatures retained.                                       |
+| 15 `20261008194938_upload_verification_recovery`        | Private upload leases/eight-argument finalizer; old unfenced finish/fail rejected.                                               |
+| 16 `20261008201320_hosted_cpu_pdf_capabilities`         | Private service-only worker registry; required even for upgraded 0/0 hosted workers.                                             |
+| 17 `20261008213000_comparison_job_allowance_accounting` | Only actual comparisons consume comparison allowance; upload reservations unchanged.                                             |
 
 DDL takes locks on shared tables/constraints and replaces globally used functions.
 Existing rows must satisfy source/job constraints. Preserve a restorable backup,
@@ -218,7 +268,7 @@ On failure, withdraw Preview traffic or redeploy the compatible new API/browser
 with flags 0/0 first; in-flight PDF work may already exist, so disable/drain workers
 under the incident plan and let leases expire naturally if interrupted. Restart
 all workers with flags 0/0, confirm old advertisements expire, and verify CSV.
-Retain migration 16 when disabling PDF: restoring the all-job trigger would reintroduce incorrect charges. Keep additive schema/evidence/data; do not drop tables, reset, delete queues or
+Retain migration 17 when disabling PDF: restoring the all-job trigger would reintroduce incorrect charges. Keep additive schema/evidence/data; do not drop tables, reset, delete queues or
 rewrite applied migrations. Do not roll back the API to the old seven-argument
 finalizer while the lease migration remains. If the worker is rolled back, keep
 PDF entrypoints off and ensure no PDF job can be claimed by a legacy consumer;
@@ -278,8 +328,9 @@ bytes. Three embedded tests initially lacked the snapshot's Python interpreter;
 they passed after configuring that disposable tree to use the separately installed
 release wheel. These were snapshot setup issues; no application or migration fix
 was made. Native database/browser checks from Chunk 9 were reused, not rerun.
-No actual hosted compatibility, image deployment, identity, migration ledger or
-provisioned worker has been established.
+The preceding packaging checks are historical. Chunk 13 established source/resource
+identities and the shared migration ledger; actual hosted CPU PDF compatibility,
+an isolated image deployment and isolated resources remain unverified.
 
 The known baseline code divergence and PDF allowance defect are resolved. Release blockers remain approved isolated Preview
 infrastructure/configuration, hosted migration/worker/API rollout and real hosted
