@@ -2,6 +2,9 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import {
   api,
+  uploadAccept,
+  uploadFormatLabel,
+  digitalPdfEnabled,
   importOptions,
   defaultSettings,
   friendlyError,
@@ -218,15 +221,17 @@ async function upload(side: string, event: Event) {
       comparison.value.supplier_id,
       file,
       (state) => {
-        uploadState.value[side] = state;
+        if (!disposed) uploadState.value[side] = state;
       },
     );
+    if (disposed) return;
     const attached = await props.client.from("comparison_files").insert({
       tenant_id: props.tenantId,
       comparison_id: props.comparisonId,
       source_file_id: id,
       side,
     });
+    if (disposed) return;
     if (attached.error) throw attached.error;
     if (/\.xlsx$/i.test(file.name)) {
       const settings = side === "current" ? currentSettings : incomingSettings;
@@ -244,8 +249,10 @@ async function upload(side: string, event: Event) {
     }
     await load();
   } catch (e) {
-    error.value = friendlyError(e);
-    uploadState.value[side] = "Failed — select the file to retry";
+    if (!disposed) {
+      error.value = friendlyError(e);
+      uploadState.value[side] = "Failed — select the file to retry";
+    }
   } finally {
     busy.value = false;
     input.value = "";
@@ -489,13 +496,15 @@ onUnmounted(() => {
                 : 'New catalogue file'
             "
             type="file"
-            accept=".pdf,application/pdf,.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            :accept="uploadAccept"
             :disabled="busy || !!files[side]"
             @change="upload(side, $event)"
           /><small role="status">{{
             files[side]
-              ? "✓ Verified and ready"
-              : uploadState[side] || "CSV, XLSX or PDF · up to 10 MiB"
+              ? /\.pdf$/i.test(files[side]!.original_filename)
+                ? "✓ Upload bytes verified · see inspection below"
+                : "✓ Verified and ready"
+              : uploadState[side] || `${uploadFormatLabel} · up to 10 MiB`
           }}</small></label
         >
       </div>
@@ -551,9 +560,9 @@ onUnmounted(() => {
             !files.current ||
             !files.incoming ||
             (/\.pdf$/i.test(files.current?.original_filename ?? '') &&
-              !currentSettings.pdfRevisionId) ||
+              (!digitalPdfEnabled || !currentSettings.pdfRevisionId)) ||
             (/\.pdf$/i.test(files.incoming?.original_filename ?? '') &&
-              !incomingSettings.pdfRevisionId)
+              (!digitalPdfEnabled || !incomingSettings.pdfRevisionId))
           "
         >
           {{ busy ? "Working…" : "Start comparison" }}

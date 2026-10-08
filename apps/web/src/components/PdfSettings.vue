@@ -1,8 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { api, csvOptions, defaultSettings, friendlyError } from "../workflow";
+import {
+  api,
+  csvOptions,
+  defaultSettings,
+  friendlyError,
+  digitalPdfEnabled,
+} from "../workflow";
 import type { Client, CsvSettings as Settings } from "../workflow";
 import CsvSettings from "./CsvSettings.vue";
+import {
+  digitalPageRange,
+  inspectionLabel,
+  inspectionPending,
+} from "../pdf-inspection";
+import type { PdfInspectionState } from "../pdf-inspection";
 const props = defineProps<{
   client: Client;
   tenantId: string;
@@ -11,7 +23,11 @@ const props = defineProps<{
 }>();
 const settings = defineModel<Settings>({ required: true });
 type Cell = { column_name: string; value: string | null; evidence_id: string };
-type RecordRow = { record_id: string; raw_cells: Cell[] };
+type RecordRow = {
+  record_id: string;
+  raw_cells: Cell[];
+  semantic_candidates?: Record<string, string | null>;
+};
 type Locator = { page: number; table: string; row: number };
 type Extraction = {
   id: string;
@@ -22,6 +38,7 @@ type Extraction = {
     strategy: string;
     provider?: string;
     model_version?: string;
+    layout_association?: { columns: { field: string; label: string }[] };
   };
   completed_pages: number;
   total_pages: number | null;
@@ -53,6 +70,12 @@ type Revision = {
 };
 const extraction = ref<Extraction | null>(null),
   revision = ref<Revision | null>(null);
+const inspection = ref<PdfInspectionState | null>(null);
+const canExtract = computed(
+  () =>
+    digitalPdfEnabled &&
+    digitalPageRange(inspection.value, first.value, last.value),
+);
 const first = ref(1),
   last = ref(1),
   pageCount = ref(0),
@@ -62,9 +85,7 @@ const tableIndex = ref(1),
   repeat = ref(true),
   confirmed = ref(false);
 const corrections = ref<Record<string, Record<string, string | null>>>({});
-const providerChoice = ref("digital"),
-  ocrModel = ref("PaddleOCR-VL-1.6"),
-  verifiedOcr = ref<string[]>([]);
+const verifiedOcr = ref<string[]>([]);
 const ocrIds = computed(
   () =>
     new Set(
@@ -89,7 +110,23 @@ const error = ref(""),
 let disposed = false,
   hydrating = false,
   loading = false,
-  timer: ReturnType<typeof setInterval>;
+  generation = 0,
+  timer: ReturnType<typeof setTimeout> | undefined;
+let unsubscribe: (() => void) | undefined;
+function active(request: number) {
+  return !disposed && request === generation;
+}
+function schedule() {
+  clearTimeout(timer);
+  if (
+    !disposed &&
+    !error.value &&
+    (inspectionPending(inspection.value) ||
+      ["queued", "running"].includes(extraction.value?.status ?? ""))
+  ) {
+    timer = setTimeout(() => void refresh(), 1500);
+  }
+}
 const evidence = computed(
   () =>
     new Map(
@@ -102,17 +139,41 @@ const evidence = computed(
 function locator(r: RecordRow): Locator {
   return evidence.value.get(r.raw_cells[0]!.evidence_id)!;
 }
+const retailGuidance = computed(
+  () =>
+    extraction.value?.payload?.records.some(
+      (r) => r.semantic_candidates?.price_role === "retail_guidance",
+    ) ?? false,
+);
+const unresolvedPricing = computed(
+  () =>
+    extraction.value?.payload?.records.some(
+      (r) => r.semantic_candidates?.pricing_basis_unresolved === "true",
+    ) ?? false,
+);
+const reviewOnly = computed(
+  () => retailGuidance.value || unresolvedPricing.value,
+);
+function sourceAttributes(r: RecordRow) {
+  const mapped = new Set(Object.values(mappings.value));
+  return r.raw_cells.filter((c) => !mapped.has(c.column_name));
+}
+function gridTable(r: RecordRow) {
+  return r.semantic_candidates?.layout_grid_table ?? locator(r).table;
+}
+function gridRow(r: RecordRow) {
+  return Number(r.semantic_candidates?.layout_grid_row ?? locator(r).row);
+}
 const tables = computed(() =>
   [
     ...new Set(
-      extraction.value?.payload?.records.map((r) => Number(locator(r).table)) ??
-        [],
+      extraction.value?.payload?.records.map((r) => Number(gridTable(r))) ?? [],
     ),
   ].sort((a, b) => a - b),
 );
 const selected = computed(() =>
   (extraction.value?.payload?.records ?? []).filter(
-    (r) => locator(r).table === String(tableIndex.value),
+    (r) => gridTable(r) === String(tableIndex.value),
   ),
 );
 const firstPage = computed(() =>
@@ -130,7 +191,7 @@ const headers = computed(
 const productRows = computed(() =>
   selected.value.filter(
     (r) =>
-      locator(r).row > headerRow.value &&
+      gridRow(r) > headerRow.value &&
       !(
         repeat.value &&
         r.raw_cells.every((c, i) => (c.value ?? "") === headers.value[i])
@@ -140,20 +201,36 @@ const productRows = computed(() =>
 );
 const mappings = computed(
   () =>
-    ({
-      supplier_sku: settings.value.sku,
-      cost_price: settings.value.price,
-      ...(settings.value.description
-        ? { description: settings.value.description }
-        : {}),
-      ...(settings.value.currencyColumn
-        ? { currency: settings.value.currencyColumn }
-        : {}),
-      ...(settings.value.packColumn
-        ? { pack_quantity: settings.value.packColumn }
-        : {}),
-      ...(settings.value.unitColumn ? { unit: settings.value.unitColumn } : {}),
-    }) as Record<string, string>,
+    (reviewOnly.value
+      ? Object.fromEntries(
+          (extraction.value?.configuration.layout_association?.columns ?? [])
+            .filter((c) =>
+              [
+                "supplier_sku",
+                "description",
+                "cost_price",
+                "retail_price_ex_vat",
+                "retail_price_inc_vat",
+              ].includes(c.field),
+            )
+            .map((c) => [c.field, c.label]),
+        )
+      : {
+          supplier_sku: settings.value.sku,
+          cost_price: settings.value.price,
+          ...(settings.value.description
+            ? { description: settings.value.description }
+            : {}),
+          ...(settings.value.currencyColumn
+            ? { currency: settings.value.currencyColumn }
+            : {}),
+          ...(settings.value.packColumn
+            ? { pack_quantity: settings.value.packColumn }
+            : {}),
+          ...(settings.value.unitColumn
+            ? { unit: settings.value.unitColumn }
+            : {}),
+        }) as Record<string, string>,
 );
 function original(r: RecordRow, field: string) {
   return (
@@ -171,9 +248,10 @@ function correct(r: RecordRow, field: string, value: string | null) {
 }
 function configuration() {
   if (
-    !settings.value.sku ||
-    !settings.value.price ||
-    settings.value.sku === settings.value.price
+    !reviewOnly.value &&
+    (!settings.value.sku ||
+      !settings.value.price ||
+      settings.value.sku === settings.value.price)
   )
     throw new Error("Map PDF SKU and cost to distinct detected headers.");
   const mappedFields = [
@@ -182,7 +260,23 @@ function configuration() {
     settings.value.unitColumn && "unit",
   ].filter(Boolean) as string[];
   return {
-    ...csvOptions(settings.value, mappedFields),
+    ...(reviewOnly.value
+      ? {
+          encoding: "utf-8-sig",
+          delimiter: ",",
+          decimal_separator: ".",
+          thousands_separator: ",",
+          currency: "GBP",
+          unit: null,
+          pack_quantity: null,
+          price_basis: null,
+          tax_basis: unresolvedPricing.value
+            ? (extraction.value?.payload?.records[0]?.semantic_candidates
+                ?.tax_basis ?? null)
+            : null,
+          currency_symbol: "£",
+        }
+      : csvOptions(settings.value, mappedFields)),
     columns: mappings.value,
     table_index: tableIndex.value,
     header_row: headerRow.value,
@@ -247,7 +341,15 @@ function validate() {
         throw new Error(
           "Corrected currency must be a three-letter uppercase code.",
         );
-      if (["cost_price", "pack_quantity"].includes(field) && value !== null) {
+      if (
+        [
+          "cost_price",
+          "pack_quantity",
+          "retail_price_ex_vat",
+          "retail_price_inc_vat",
+        ].includes(field) &&
+        value !== null
+      ) {
         const regex =
           settings.value.decimal === "."
             ? /^[0-9]+(?:\.[0-9]+)?$/
@@ -276,7 +378,7 @@ function restore(v: Revision) {
   corrections.value = JSON.parse(JSON.stringify(v.corrections));
   Object.assign(settings.value, {
     sku: c.columns.supplier_sku,
-    price: c.columns.cost_price,
+    price: c.columns.cost_price ?? "",
     description: c.columns.description ?? "",
     currencyColumn: c.columns.currency ?? "",
     packColumn: c.columns.pack_quantity ?? "",
@@ -286,8 +388,8 @@ function restore(v: Revision) {
     currency: c.currency ?? "",
     unit: c.unit ?? "",
     pack: c.pack_quantity ?? "",
-    priceBasis: c.price_basis,
-    taxBasis: c.tax_basis,
+    priceBasis: c.price_basis ?? defaultSettings().priceBasis,
+    taxBasis: c.tax_basis ?? defaultSettings().taxBasis,
     symbol: c.currency_symbol ?? "",
     pdfRevisionId: v.confirmed ? v.id : undefined,
   });
@@ -295,8 +397,31 @@ function restore(v: Revision) {
 }
 async function refresh(initial = false) {
   if (loading || disposed) return;
+  clearTimeout(timer);
+  const request = generation;
   loading = true;
+  error.value = "";
   try {
+    const meta: PdfInspectionState = await (
+      await api(props.client, "/api/pdf", {
+        tenantId: props.tenantId,
+        fileId: props.fileId,
+      })
+    ).json();
+    if (!active(request)) return;
+    if (
+      meta.fileId !== props.fileId ||
+      !meta.inspection ||
+      !meta.byteVerification
+    )
+      throw new Error(
+        "PDF inspection response is incompatible. Refresh or contact your administrator.",
+      );
+    inspection.value = meta;
+    const previousCount = pageCount.value;
+    pageCount.value = meta.inspection.pageCount ?? 0;
+    if (!previousCount && pageCount.value)
+      last.value = Math.min(pageCount.value, 50);
     const result = await props.client
       .from("extraction_runs")
       .select("*")
@@ -306,15 +431,13 @@ async function refresh(initial = false) {
       .limit(1)
       .maybeSingle();
     if (result.error) throw result.error;
-    if (disposed) return;
+    if (!active(request)) return;
     extraction.value = result.data;
     if (initial && extraction.value) {
       const c = extraction.value.configuration;
       first.value = c.first_page;
       last.value = c.last_page;
       strategy.value = c.strategy;
-      providerChoice.value = c.provider ?? "digital";
-      ocrModel.value = c.model_version ?? ocrModel.value;
     }
     if (extraction.value?.status === "ready") {
       const saved = await props.client
@@ -326,21 +449,46 @@ async function refresh(initial = false) {
         .limit(1)
         .maybeSingle();
       if (saved.error) throw saved.error;
-      if (disposed) return;
+      if (!active(request)) return;
       revision.value = saved.data;
       if (initial && revision.value) restore(revision.value);
     }
   } catch (e) {
-    if (!disposed) error.value = friendlyError(e);
+    if (active(request)) error.value = friendlyError(e);
   } finally {
-    loading = false;
+    if (active(request)) {
+      loading = false;
+      schedule();
+    }
+  }
+}
+async function retryInspection() {
+  const request = generation;
+  busy.value = true;
+  error.value = "";
+  try {
+    await api(props.client, "/api/uploads", {
+      action: "finalize",
+      tenantId: props.tenantId,
+      fileId: props.fileId,
+    });
+    if (active(request)) await refresh();
+  } catch (e) {
+    if (active(request)) error.value = friendlyError(e);
+  } finally {
+    if (active(request)) busy.value = false;
   }
 }
 async function extract() {
+  const request = generation;
   busy.value = true;
   error.value = "";
   notice.value = "";
   try {
+    if (!canExtract.value)
+      throw new Error(
+        "Select inspected digital-table candidate pages. OCR is disabled.",
+      );
     if (
       !Number.isInteger(first.value) ||
       !Number.isInteger(last.value) ||
@@ -357,16 +505,9 @@ async function extract() {
         first_page: first.value,
         last_page: last.value,
         strategy: strategy.value,
-        ...(providerChoice.value === "auto"
-          ? {
-              provider: "auto",
-              model_version: ocrModel.value,
-              dpi: 144,
-              ocr_version: "1",
-            }
-          : {}),
       },
     });
+    if (!active(request)) return;
     if (response.error) throw response.error;
     extraction.value = response.data.extraction;
     revision.value = null;
@@ -376,12 +517,13 @@ async function extract() {
     settings.value.pdfRevisionId = undefined;
     await refresh(true);
   } catch (e) {
-    error.value = friendlyError(e);
+    if (active(request)) error.value = friendlyError(e);
   } finally {
-    busy.value = false;
+    if (active(request)) busy.value = false;
   }
 }
 async function save(confirm: boolean) {
+  const request = generation;
   busy.value = true;
   error.value = "";
   notice.value = "";
@@ -402,6 +544,14 @@ async function save(confirm: boolean) {
       throw new Error(
         "Verify each OCR product row against its source before confirming.",
       );
+    if (confirm && retailGuidance.value)
+      throw new Error(
+        "Retail guidance cannot be confirmed for wholesale cost comparison or export. Save a review draft instead.",
+      );
+    if (confirm && unresolvedPricing.value)
+      throw new Error(
+        "Supplier pricing basis is unresolved; cost comparison/export is blocked. Save a review draft instead.",
+      );
     const response = await props.client.rpc("save_pdf_revision", {
       p_tenant: props.tenantId,
       p_extraction: extraction.value!.id,
@@ -410,6 +560,7 @@ async function save(confirm: boolean) {
       p_corrections: corrections.value,
       p_confirmed: confirm,
     });
+    if (!active(request)) return;
     if (response.error) throw response.error;
     revision.value = response.data;
     settings.value.pdfRevisionId = confirm ? response.data.id : undefined;
@@ -417,9 +568,9 @@ async function save(confirm: boolean) {
       ? "PDF mapping confirmed. Ready for comparison."
       : "Correction draft saved.";
   } catch (e) {
-    error.value = friendlyError(e);
+    if (active(request)) error.value = friendlyError(e);
   } finally {
-    busy.value = false;
+    if (active(request)) busy.value = false;
   }
 }
 watch(
@@ -451,7 +602,34 @@ watch(
   },
   { flush: "sync" },
 );
-onMounted(async () => {
+function initialize() {
+  unsubscribe?.();
+  const listener = props.client.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT") {
+      generation++;
+      clearTimeout(timer);
+      disposed = true;
+      inspection.value = null;
+      extraction.value = null;
+      revision.value = null;
+      settings.value.pdfRevisionId = undefined;
+    }
+  });
+  unsubscribe = () => listener.data.subscription.unsubscribe();
+  generation++;
+  clearTimeout(timer);
+  loading = false;
+  busy.value = false;
+  inspection.value = null;
+  extraction.value = null;
+  revision.value = null;
+  pageCount.value = 0;
+  first.value = last.value = 1;
+  corrections.value = {};
+  verifiedOcr.value = [];
+  confirmed.value = false;
+  notice.value = "";
+  error.value = "";
   hydrating = true;
   Object.assign(settings.value, {
     ...defaultSettings(),
@@ -463,53 +641,103 @@ onMounted(async () => {
     unitColumn: "",
   });
   hydrating = false;
-  try {
-    const meta = await (
-      await api(props.client, "/api/pdf", {
-        tenantId: props.tenantId,
-        fileId: props.fileId,
-      })
-    ).json();
-    pageCount.value = meta.pages;
-    ocrModel.value = meta.ocrModel ?? "PaddleOCR-VL-1.6";
-    last.value = Math.min(meta.pages, 50);
-  } catch (e) {
-    error.value = friendlyError(e);
-  }
-  await refresh(true);
-  timer = setInterval(() => {
-    if (
-      extraction.value &&
-      ["queued", "running"].includes(extraction.value.status)
-    )
-      void refresh();
-  }, 1500);
+  void refresh(true);
+}
+watch(() => [props.tenantId, props.fileId, props.client], initialize);
+onMounted(() => {
+  initialize();
 });
 onUnmounted(() => {
   disposed = true;
-  clearInterval(timer);
+  generation++;
+  clearTimeout(timer);
+  unsubscribe?.();
 });
 </script>
 <template>
   <section class="pdf-settings" :aria-label="'PDF import · ' + side">
     <h3>PDF · {{ side }}</h3>
+    <section
+      class="inspection-status"
+      aria-label="PDF inspection"
+      aria-live="polite"
+    >
+      <h4>{{ inspectionLabel(inspection) }}</h4>
+      <p v-if="inspection?.byteVerification === 'verified'">
+        Upload bytes verified. Inspection checks document structure only; no
+        products have been extracted by inspection.
+      </p>
+      <p v-if="inspectionPending(inspection)">
+        Processing is pending. You can leave and return; this page updates while
+        processing continues.
+      </p>
+      <p v-if="inspection?.inspection.status === 'inspected'">
+        Digital tables may be usable. Choose pages and explicitly extract them,
+        then review corrections and confirm mapping before comparison.
+      </p>
+      <p v-if="inspection?.inspection.status === 'ocr_required'">
+        Scanned or unsupported pages require OCR. OCR is disabled. Upload
+        CSV/XLSX or a digital PDF with usable tables. Only candidate pages below
+        can use digital extraction.
+      </p>
+      <p v-if="inspection?.inspection.status === 'failed'" role="alert">
+        {{
+          inspection.inspection.failure?.message ??
+          "Document inspection could not finish."
+        }}
+        Upload a corrected file in a new comparison; this terminal inspection
+        cannot be retried here.
+      </p>
+      <p v-if="inspection?.byteVerification === 'verifying'">
+        Verification has not finished. An interrupted attempt expires after two
+        minutes; the uploader can then retry finalization for this upload.
+      </p>
+      <p v-if="inspection?.byteVerification === 'failed'" role="alert">
+        Choose a corrected file in a new comparison.
+      </p>
+      <template
+        v-if="
+          inspection?.byteVerification === 'verified' &&
+          inspection.inspection.status === 'not_queued'
+        "
+      >
+        <p>
+          Bytes are saved, but inspection has not been queued. Retry without
+          re-uploading.
+        </p>
+        <button type="button" :disabled="busy" @click="retryInspection">
+          Retry inspection enqueue
+        </button>
+      </template>
+      <ul
+        v-if="inspection?.inspection.diagnostics?.length"
+        class="inspection-pages"
+      >
+        <li v-for="page in inspection.inspection.diagnostics" :key="page.page">
+          Page {{ page.page }} ·
+          {{
+            page.state === "digital_candidate"
+              ? "Digital-table candidate"
+              : "OCR required · disabled"
+          }}<span v-if="page.state === 'digital_candidate'">
+            · {{ page.table_count }} candidate table(s)</span
+          >
+        </li>
+      </ul>
+    </section>
     <p class="hint">
-      Choose pages and table structure. Text is read directly; image-only or
-      unsupported pages require OCR. No fields are guessed.
+      Digital extraction is explicit. Inspection success alone does not make a
+      file ready for comparison. OCR is disabled for scanned/unsupported
+      documents.
     </p>
     <div class="field-grid">
-      <label
-        >Extraction method<select v-model="providerChoice">
-          <option value="digital">Digital extraction only</option>
-          <option value="auto">Digital + OCR for required pages</option>
-        </select></label
-      >
       <label
         >First page<input
           v-model.number="first"
           type="number"
           min="1"
           :max="pageCount"
+          :disabled="!pageCount"
       /></label>
       <label
         >Last page<input
@@ -517,6 +745,7 @@ onUnmounted(() => {
           type="number"
           min="1"
           :max="pageCount"
+          :disabled="!pageCount"
       /></label>
       <label
         >Table structure<select v-model="strategy">
@@ -528,11 +757,15 @@ onUnmounted(() => {
     <p class="hint">
       {{ pageCount }} pages available · select up to 50 per extraction.
     </p>
+    <p v-if="!digitalPdfEnabled" class="hint">
+      Digital extraction is disabled. Inspection does not make this PDF ready
+      for comparison.
+    </p>
     <button
       type="button"
       :disabled="
         busy ||
-        !pageCount ||
+        !canExtract ||
         ['queued', 'running'].includes(extraction?.status ?? '')
       "
       @click="extract"
@@ -540,6 +773,9 @@ onUnmounted(() => {
       Extract selected pages
     </button>
     <p v-if="error" class="alert" role="alert">{{ error }}</p>
+    <button v-if="error" type="button" :disabled="busy" @click="refresh(true)">
+      Retry status check
+    </button>
     <p v-if="notice" class="success-note" role="status">{{ notice }}</p>
     <p
       v-if="extraction && ['queued', 'running'].includes(extraction.status)"
@@ -578,9 +814,8 @@ onUnmounted(() => {
     >
       <h4>OCR required</h4>
       <p>
-        Selected pages lack reliable embedded text/table structure. Upload
-        CSV/XLSX, or select Digital + OCR for required pages and extract again.
-        If OCR has already run, failed pages must be resolved before comparison.
+        Selected pages lack reliable embedded text/table structure. OCR is
+        disabled. Upload CSV/XLSX or a digital PDF with usable tables.
       </p>
     </section>
     <p v-if="extraction?.status === 'failed'" class="alert" role="alert">
@@ -641,7 +876,23 @@ onUnmounted(() => {
           headers</label
         >
       </div>
+      <p v-if="retailGuidance" class="ocr-review-note">
+        Retail guidance only: both VAT price columns remain separate. No
+        wholesale cost mapping or export is available. Save corrections as a
+        review draft.
+      </p>
+      <p v-if="unresolvedPricing" class="ocr-review-note">
+        Supplier pricing basis unresolved: pack quantities, lengths and raw
+        units are source attributes, not a verified price denominator. Cost
+        comparison and export remain blocked. Save corrections as a review
+        draft. Currency: GBP. VAT basis:
+        {{
+          extraction?.payload?.records[0]?.semantic_candidates?.tax_basis ??
+          "unstated"
+        }}.
+      </p>
       <CsvSettings
+        v-if="!reviewOnly"
         v-model="settings"
         :side="side"
         :headers="headers"
@@ -680,6 +931,23 @@ onUnmounted(() => {
             >
               <td>
                 Page {{ locator(r).page }} · row {{ locator(r).row }}
+                <p v-if="r.semantic_candidates?.section" class="hint">
+                  {{ r.semantic_candidates.section }}
+                </p>
+                <p
+                  v-if="r.semantic_candidates?.original_source_page"
+                  class="hint"
+                >
+                  Original PDF page
+                  {{ r.semantic_candidates.original_source_page }}
+                </p>
+                <p
+                  v-for="cell in sourceAttributes(r)"
+                  :key="cell.column_name"
+                  class="hint"
+                >
+                  {{ cell.column_name }}: {{ cell.value || "(blank)" }}
+                </p>
                 <label v-if="ocrIds.has(r.record_id)" class="checkbox"
                   ><input
                     type="checkbox"
@@ -787,6 +1055,19 @@ onUnmounted(() => {
   min-width: 0;
   padding: 1rem 0;
   border-top: 1px solid var(--border, #d9dee6);
+}
+.inspection-status {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f7f9f8;
+  border: 1px solid var(--border, #d9dee6);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+.inspection-pages {
+  max-height: 12rem;
+  overflow: auto;
+  padding-left: 1.25rem;
 }
 .ocr-review-note {
   padding: 1rem;

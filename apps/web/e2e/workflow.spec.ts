@@ -11,7 +11,7 @@ import { Client } from "pg";
 const env = Object.fromEntries(
   Object.entries(process.env).filter(
     ([key]) =>
-      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_OCR_)/i.test(
+      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_SUPABASE_|STOCKSHIFT_OCR_)/i.test(
         key,
       ),
   ),
@@ -27,6 +27,34 @@ if (state.API_URL !== "http://127.0.0.1:54321")
   throw new Error("Local stack required");
 const admin = createClient(state.API_URL, state.SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
+});
+let daemon: ReturnType<typeof spawn> | undefined;
+let daemonContainer: string | undefined;
+test.afterEach(() => {
+  if (daemonContainer) {
+    try {
+      execFileSync("docker", ["stop", "--timeout", "35", daemonContainer], {
+        timeout: 45000,
+      });
+      const stopped = JSON.parse(
+        execFileSync("docker", ["inspect", daemonContainer], {
+          encoding: "utf8",
+        }),
+      )[0];
+      expect(stopped.State.ExitCode).toBe(0);
+      const logs = execFileSync("docker", ["logs", daemonContainer], {
+        encoding: "utf8",
+      });
+      expect(logs).toContain("StockShift worker polling ready.");
+      expect(logs).toContain("Worker stopped after draining current job.");
+    } finally {
+      execFileSync("docker", ["rm", "--force", daemonContainer], {
+        timeout: 15000,
+      });
+      daemonContainer = undefined;
+    }
+  } else daemon?.kill();
+  daemon = undefined;
 });
 let account: { email: string; password: string; tenant: string };
 test.beforeEach(async ({ page }) => {
@@ -87,6 +115,13 @@ async function create(page: Page, title: string) {
     page.getByRole("heading", { name: "Add your catalogue files" }),
   ).toBeVisible();
   await noOverflow(page);
+  if (process.env.STOCKSHIFT_CSV_ONLY === "1") {
+    await expect(page.getByLabel("Current catalogue file")).toHaveAttribute(
+      "accept",
+      ".csv,text/csv",
+    );
+    await expect(page.getByText("CSV preview · up to 10 MiB")).toHaveCount(2);
+  }
 }
 async function upload(page: Page, old: Buffer, next: Buffer) {
   await page
@@ -113,6 +148,51 @@ function worker(ocrEndpoint?: string) {
     "services/worker/.venv",
     process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
   );
+  if (process.env.STOCKSHIFT_TEST_DAEMON === "1" && !ocrEndpoint) {
+    if (!daemon) {
+      const runtimeEnv = {
+        ...env,
+        STOCKSHIFT_SUPABASE_MODE: "local",
+        STOCKSHIFT_CSV_ONLY: "1",
+        STOCKSHIFT_RUNTIME: "production",
+        STOCKSHIFT_LOCAL_SUPABASE_URL: state.API_URL,
+        STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY: state.SERVICE_ROLE_KEY,
+      };
+      if (process.env.STOCKSHIFT_TEST_WORKER_IMAGE) {
+        daemonContainer = "stockshift-csv-test-" + randomUUID();
+        daemon = spawn(
+          "docker",
+          [
+            "run",
+            "--name",
+            daemonContainer,
+            "--network",
+            "host",
+            "--memory",
+            "512m",
+            ...[
+              "STOCKSHIFT_SUPABASE_MODE",
+              "STOCKSHIFT_CSV_ONLY",
+              "STOCKSHIFT_LOCAL_SUPABASE_URL",
+              "STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY",
+            ].flatMap((key) => ["--env", key]),
+            process.env.STOCKSHIFT_TEST_WORKER_IMAGE,
+          ],
+          {
+            env: runtimeEnv,
+            stdio: ["ignore", "pipe", "pipe"],
+            windowsHide: true,
+          },
+        );
+      } else
+        daemon = spawn(python, ["-m", "stockshift_worker.entrypoints.cli"], {
+          env: runtimeEnv,
+          stdio: ["ignore", "pipe", "pipe"],
+          windowsHide: true,
+        });
+    }
+    return;
+  }
   const result = spawnSync(
     python,
     ["-m", "stockshift_worker.entrypoints.cli", "--once"],
@@ -298,19 +378,34 @@ test("scanned and mixed PDF OCR correction review/export survives reload", async
         }),
       ).toBeVisible();
     }
-    await page.reload();
-    await expect(
-      page
-        .locator(".pdf-settings")
-        .nth(1)
-        .getByText(/Revision 2 · confirmed/),
-    ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Start comparison", exact: true })
-      .click();
-    await expect(
-      page.getByRole("heading", { name: "Comparison queued" }),
-    ).toBeVisible();
+    let releaseInspection!: () => void;
+    const inspectionGate = new Promise<void>((resolve) => {
+      releaseInspection = resolve;
+    });
+    const holdInspection = async (route: import("@playwright/test").Route) => {
+      await inspectionGate;
+      await route.continue();
+    };
+    await page.route("**/api/pdf", holdInspection);
+    try {
+      await page.reload();
+      await expect(
+        page
+          .locator(".pdf-settings")
+          .nth(1)
+          .getByText(/Revision 2 · confirmed/),
+      ).toBeVisible();
+      // Persisted confirmed revisions are valid even while inspection-only controls load.
+      await page
+        .getByRole("button", { name: "Start comparison", exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Comparison queued" }),
+      ).toBeVisible();
+    } finally {
+      releaseInspection();
+      await page.unrouteAll({ behavior: "wait" });
+    }
     worker();
     await expect(
       page.getByRole("region", { name: "Persisted outcome counts" }),

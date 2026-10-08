@@ -16,7 +16,7 @@ import workbookHandler from '../../apps/web/api/workbook'
 import { XLSX_MIME } from '../../apps/web/server/workbook'
 
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
-  !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_)/i.test(key)))
+  !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_SUPABASE_)/i.test(key)))
 const status = JSON.parse(execFileSync(process.execPath,
   ['scripts/supabase-local.mjs', 'status', '--output', 'json'], { env, encoding: 'utf8' }))
 const url = 'http://127.0.0.1:54321'
@@ -35,6 +35,7 @@ const exportServer = createServer(exportHandler)
 let exportUrl = ''
 
 before(async () => {
+  process.env.STOCKSHIFT_PDF_INSPECTION_ENABLED='1'
   Object.assign(process.env, { STOCKSHIFT_LOCAL_SUPABASE_URL: url,
     STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY: config.publishableKey,
     STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY: config.secretKey })
@@ -182,18 +183,31 @@ async function enqueueCsvPair(current: Buffer, incoming: Buffer, options = csvOp
   assert.ifError(result.error)
   return result.data
 }
-function executeWorker() {
+function executeSingleWorker() {
   const python = resolve('services/worker/.venv', process.platform==='win32'?'Scripts/python.exe':'bin/python')
   const result = spawnSync(python,['-m','stockshift_worker.entrypoints.cli','--once'],{
-    env:{...env,STOCKSHIFT_LOCAL_SUPABASE_URL:url,STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY:config.secretKey},
+    env:{...env,STOCKSHIFT_SUPABASE_MODE:"local",STOCKSHIFT_LOCAL_SUPABASE_URL:url,STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY:config.secretKey},
     encoding:'utf8',timeout:60000,
   })
   assert.equal(result.status,0,`Local worker failed: ${result.stderr}`)
 }
+async function executeWorker() {
+  // Finalization now enqueues CPU inspection before a separately requested extraction.
+  // Drain only this suite's bounded test-owned queue; never claim unrelated work.
+  const outsiders=await db.query("select count(*)::int n from public.jobs where tenant_id<>$1 and status in ('queued','running','retry_wait')",[A])
+  assert.equal(outsiders.rows[0].n,0,'Unrelated unfinished jobs must not be consumed')
+  for(let attempt=0;attempt<10;attempt++) {
+    const pending=await db.query("select count(*)::int n from public.jobs where tenant_id=$1 and status in ('queued','running','retry_wait')",[A])
+    if(!pending.rows[0].n) return
+    executeSingleWorker()
+  }
+  assert.fail('Test-owned queue did not drain within ten jobs')
+}
+
 test('real Python worker processes the golden CSV fixture into 100 persisted results and two pending candidates',async()=>{
   const job = await enqueueCsvPair(readFileSync('tests/fixtures/csv/old_catalogue.csv'),
     readFileSync('tests/fixtures/csv/new_supplier_catalogue.csv'))
-  executeWorker()
+  await executeWorker()
   const state=(await db.query('select status,attempt_count from public.jobs where id=$1',[job.id])).rows[0]
   assert.deepEqual(state,{status:'succeeded',attempt_count:1})
   const counts=(await db.query(`select primary_outcome,count(*)::int as n from public.comparison_results
@@ -206,13 +220,13 @@ test('real Python worker processes the golden CSV fixture into 100 persisted res
     where comparison_run_id=$1 and old_values is not null limit 1`,[job.comparison_run_id])).rows[0]
   assert.ok(provenance.provenance.length>0)
   assert.ok(provenance.provenance.some((e: {source_file_id:string})=>e.source_file_id===provenance.old_values.source_file_id))
-  executeWorker()
+  await executeWorker()
   assert.equal((await db.query('select count(*)::int as n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,100)
 })
 test('real worker persists exact decimal strings and undefined percentage for zero old cost',async()=>{
   const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n001,0.00,A\n002,1.2300,B\n'),
     Buffer.from('SKU,Price,Description\n001,1.2500,A\n002,1.2301,B\n'))
-  executeWorker()
+  await executeWorker()
   const rows=(await db.query(`select old_values,cost_delta_text,cost_delta::text,
     cost_change_percent_text,percentage_state,reasons from public.comparison_results
     where comparison_run_id=$1`,[job.comparison_run_id])).rows
@@ -225,7 +239,7 @@ test('real worker persists exact decimal strings and undefined percentage for ze
 test('real worker persists structured terminal failure for invalid CSV mapping without publishing partial results',async()=>{
   const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n001,2,A\n'),
     Buffer.from('WRONG,Price,Description\n001,3,A\n'))
-  executeWorker()
+  await executeWorker()
   const row=(await db.query('select status,failure_reason from public.jobs where id=$1',[job.id])).rows[0]
   assert.equal(row.status,'failed');assert.equal(row.failure_reason.code,'invalid_csv_job')
   assert.equal(row.failure_reason.stage,'parse');assert.equal(row.failure_reason.retryable,false)
@@ -238,7 +252,7 @@ test('real worker recovers an abandoned lease and stale completion cannot duplic
   const claimed=await admin.rpc('claim_csv_job',{p_worker:abandoned})
   assert.ifError(claimed.error);assert.equal(claimed.data.id,job.id)
   await db.query("update public.jobs set lease_expires_at=clock_timestamp()-interval '1 second' where id=$1",[job.id])
-  executeWorker()
+  await executeWorker()
   const current=(await db.query('select status,attempt_count from public.jobs where id=$1',[job.id])).rows[0]
   assert.deepEqual(current,{status:'succeeded',attempt_count:2})
   const stale=await admin.rpc('complete_csv_job',{p_tenant:A,p_job:job.id,p_worker:abandoned,
@@ -255,7 +269,7 @@ function exportRequest(run: string, role='editor', tenant=A) {
 test('real HTTP export is blocked until audited review, then preserves precision and protects formula text',async()=>{
   const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n000012,0.0000,Old\n=cmd,1.2300,Safe\n,2,Missing identifier\n'),
     Buffer.from('SKU,Price,Description\n000012,1.2500,New\n=cmd,1.2301,=formula\n,3,Missing identifier\n'))
-  executeWorker()
+  await executeWorker()
   const blocked=await exportRequest(job.comparison_run_id)
   assert.equal(blocked.status,409)
   const reviews=await users.editor!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id,p_outcome:'needs_review'})
@@ -283,18 +297,18 @@ test('real HTTP export rejects missing and invalid sessions without leaking keys
 })
 test('real HTTP export rejects another tenant even using a valid session',async()=>{
   const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n01,1,A\n'),Buffer.from('SKU,Price,Description\n01,2,A\n'))
-  executeWorker()
+  await executeWorker()
   assert.equal((await exportRequest(job.comparison_run_id,'other')).status,403)
 })
 test('real HTTP export supports empty completed results with header only',async()=>{
   const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n'),Buffer.from('SKU,Price,Description\n'))
-  executeWorker();const response=await exportRequest(job.comparison_run_id)
+  await executeWorker();const response=await exportRequest(job.comparison_run_id)
   assert.equal(response.status,200);assert.equal((await response.text()).split('\r\n').filter(Boolean).length,1)
 })
 test('real HTTP export rejects failed and queued runs',async()=>{
   const job=await enqueueCsvPair(Buffer.from('SKU,Price,Description\n01,1,A\n'),Buffer.from('Wrong,Price,Description\n01,2,A\n'))
   assert.equal((await exportRequest(job.comparison_run_id)).status,409)
-  executeWorker();assert.equal((await exportRequest(job.comparison_run_id)).status,409)
+  await executeWorker();assert.equal((await exportRequest(job.comparison_run_id)).status,409)
 })
 test('real HTTP export rejects unsupported methods and malformed selection',async()=>{
   assert.equal((await fetch(`${exportUrl}/api/export`,{method:'POST'})).status,405)
@@ -356,7 +370,7 @@ test('XLSX durable job persists precision, leading zeros, worksheet provenance, 
   const c=await xlsxComparison()
   const queued=await users.editor!.client.rpc('enqueue_comparison_job',{p_tenant:A,p_comparison:c.comparison,p_key:randomUUID(),p_current_options:xlsxOptions,p_incoming_options:xlsxOptions})
   assert.ifError(queued.error)
-  executeWorker()
+  await executeWorker()
   const job=queued.data
   assert.equal((await db.query('select status from public.jobs where id=$1',[job.id])).rows[0].status,'succeeded')
   const results=await users.editor!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id})
@@ -372,13 +386,13 @@ test('XLSX durable job persists precision, leading zeros, worksheet provenance, 
   assert.equal(exported.status,200);assert.match(await exported.text(),/0\.001000000000000001/)
   const other=await users.other!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id})
   assert.ifError(other.error);assert.equal(other.data.length,0)
-  executeWorker()
+  await executeWorker()
   assert.equal((await db.query('select count(*)::int n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,4)
 })
 test('XLSX formula job stores actionable terminal failure and never publishes partial results',async()=>{
   const c=await xlsxComparison(true)
   const queued=await users.editor!.client.rpc('enqueue_comparison_job',{p_tenant:A,p_comparison:c.comparison,p_key:randomUUID(),p_current_options:xlsxOptions,p_incoming_options:xlsxOptions})
-  assert.ifError(queued.error);executeWorker()
+  assert.ifError(queued.error);await executeWorker()
   const job=(await db.query('select status,failure_reason from public.jobs where id=$1',[queued.data.id])).rows[0]
   assert.equal(job.status,'failed');assert.equal(job.failure_reason.code,'invalid_xlsx_job');assert.match(job.failure_reason.message,/formula/)
   assert.equal((await db.query('select count(*)::int n from public.comparison_results where comparison_run_id=$1',[queued.data.comparison_run_id])).rows[0].n,0)
@@ -402,7 +416,7 @@ test('mixed CSV and XLSX inputs share durable results and record contracts',asyn
   assert.ifError(comp.error)
   for(const [side,file] of [['current',a],['incoming',b]] as const) assert.ifError((await users.editor!.client.from('comparison_files').insert({tenant_id:A,comparison_id:comp.data.id,source_file_id:file.fileId,side})).error)
   const queued=await users.editor!.client.rpc('enqueue_comparison_job',{p_tenant:A,p_comparison:comp.data.id,p_key:randomUUID(),p_current_options:csvOptions,p_incoming_options:xlsxOptions})
-  assert.ifError(queued.error);executeWorker()
+  assert.ifError(queued.error);await executeWorker()
   const rows=(await db.query('select primary_outcome,cost_delta_text,provenance from public.comparison_results where comparison_run_id=$1',[queued.data.comparison_run_id])).rows
   const changed=rows.find(r=>r.primary_outcome==='changed')
   assert.equal(changed.cost_delta_text,'0.001000000000000001')
@@ -423,7 +437,7 @@ async function uploadedPdf(data=pdfBytes()) {
 async function pdfExtraction(data=pdfBytes()) {
  const file=await uploadedPdf(data)
  const response=await users.editor!.client.rpc('enqueue_pdf_extraction',{p_tenant:A,p_file:file.fileId,p_configuration:{first_page:1,last_page:2,strategy:'lines'}})
- assert.ifError(response.error);executeWorker()
+ assert.ifError(response.error);await executeWorker()
  const row=(await db.query('select * from public.extraction_runs where id=$1',[response.data.extraction.id])).rows[0]
  return {file,row,job:response.data.job}
 }
@@ -441,14 +455,16 @@ test('PDF signed upload finalizes privately; exact PDF bytes are tenant-isolated
  const read=await users.viewer!.client.storage.from(bucket).download(file.path);assert.ifError(read.error)
  assert.deepEqual(Buffer.from(await read.data!.arrayBuffer()),data)
 })
-test('PDF corrupt/encrypted finalization fails safely and persists failed state',async()=>{
+test('PDF corrupt/encrypted bytes verify but CPU inspection fails terminally',async()=>{
  for(const data of [Buffer.from('%PDF-1.7 corrupt'),pdfBytes('encrypted')]) {
-  const file=await createUploadIntent(gateway,users.editor!.token,{tenantId:A,filename:'bad.pdf',byteCount:data.length})
-  assert.ifError((await users.editor!.client.storage.from(bucket).uploadToSignedUrl(file.path,file.token,data,{contentType:'application/pdf'})).error)
-  await assert.rejects(finalizeUpload(gateway,users.editor!.token,{tenantId:A,fileId:file.fileId}),{status:422})
-  assert.equal((await db.query('select status from public.source_files where id=$1',[file.fileId])).rows[0].status,'failed')
+  const file=await uploadedPdf(data)
+  await executeWorker()
+  const source=(await db.query('select status from public.source_files where id=$1',[file.fileId])).rows[0]
+  const inspection=(await db.query('select status,diagnostics from public.pdf_inspections where source_file_id=$1',[file.fileId])).rows[0]
+  assert.equal(source.status,'ready');assert.equal(inspection.status,'failed');assert.equal(inspection.diagnostics,null)
  }
 })
+
 test('real PDF extraction job stores all pages, measured progress and immutable original cell evidence',async()=>{
  const x=await pdfExtraction();assert.equal(x.row.status,'ready');assert.equal(x.row.completed_pages,2);assert.equal(x.row.total_pages,2)
  assert.equal(x.row.payload.records.length,5);assert.deepEqual(x.row.raw_pages.map((p:any)=>p.page),[1,2])
@@ -509,7 +525,7 @@ test('digital PDF comparison uses confirmed correction snapshot, exact persisted
  const queued=await users.editor!.client.rpc('enqueue_comparison_job',request);assert.ifError(queued.error)
  // A later confirmed revision cannot change the already queued comparison snapshot.
  await pdfRevision(b.row,{[record]:{cost_price:'99'}},1)
- executeWorker();const job=queued.data
+ await executeWorker();const job=queued.data
  assert.equal((await db.query('select status from public.jobs where id=$1',[job.id])).rows[0].status,'succeeded')
  const response=await users.editor!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id});assert.ifError(response.error)
  assert.equal(response.data.length,4)
@@ -518,17 +534,18 @@ test('digital PDF comparison uses confirmed correction snapshot, exact persisted
  assert.equal((await exportRequest(job.comparison_run_id)).status,409)
  for(const r of response.data.filter((r:any)=>r.review_state==='pending')) assert.ifError((await users.editor!.client.rpc('resolve_csv_review',{p_tenant:A,p_run:job.comparison_run_id,p_result:r.id,p_decision:'no_match',p_note:'Missing PDF price; exclude'})).error)
  const exported=await exportRequest(job.comparison_run_id);assert.equal(exported.status,200);assert.match(await exported.text(),/0\.001000000000000001/)
- const duplicate=await users.editor!.client.rpc('enqueue_comparison_job',request);assert.ifError(duplicate.error);assert.equal(duplicate.data.id,job.id);executeWorker()
+ const duplicate=await users.editor!.client.rpc('enqueue_comparison_job',request);assert.ifError(duplicate.error);assert.equal(duplicate.data.id,job.id);await executeWorker()
  assert.equal((await db.query('select count(*)::int n from public.comparison_results where comparison_run_id=$1',[job.comparison_run_id])).rows[0].n,4)
  const other=await users.other!.client.rpc('csv_results_page',{p_tenant:A,p_run:job.comparison_run_id});assert.ifError(other.error);assert.equal(other.data.length,0)
 })
 
-test('PDF page discovery authenticates, uses tenant RLS and verifies original private bytes',async()=>{
+test('PDF persisted inspection status authenticates and uses tenant RLS',async()=>{
  const file=await uploadedPdf()
  for(const role of ['editor','viewer','other']) {
   const res={statusCode:0,output:'',setHeader(){},end(value:string){this.output=value}}
   await pdfHandler({method:'POST',headers:{authorization:`Bearer ${users[role]!.token}`},body:{tenantId:A,fileId:file.fileId}} as Parameters<typeof pdfHandler>[0],res as unknown as Parameters<typeof pdfHandler>[1])
   assert.equal(res.statusCode,role==='other'?403:200)
-  if(role!=='other') assert.deepEqual(JSON.parse(res.output),{pages:2,ocrModel:'PaddleOCR-VL-1.6'})
+  if(role!=='other') assert.deepEqual(JSON.parse(res.output),{fileId:file.fileId,byteVerification:'verified',inspection:{id:JSON.parse(res.output).inspection.id,status:'queued',pageCount:null,diagnostics:null,failure:null},comparisonEligibility:'requires_confirmed_extraction'})
  }
+ await executeWorker()
 })

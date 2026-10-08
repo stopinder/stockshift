@@ -42,8 +42,10 @@ review exclusions and changed-products export. The Python CLI polls durable jobs
 the browser never performs matching or decimal arithmetic. Unsupported review matches
 cannot be approved: owners/editors explicitly reject or confirm no-match to exclude
 them, with an immutable decision history. Export stays blocked until review is complete.
-The existing private CSV MVP is not present. There are no connected hosted backends,
-billing, fuzzy matching or OCR models yet. Digital PDFs now use direct text/table parsing, immutable evidence and durable correction revisions.
+The existing private CSV MVP is not present. Hosted Supabase and a compatible hosted
+CPU worker remain unconfigured; billing and fuzzy matching are not implemented.
+The private OCR serving endpoint is separate and remains paused. Digital PDFs use
+direct text/table parsing, immutable evidence and durable correction revisions.
 See [the complete local browser workflow](docs/LOCAL_CSV_WORKFLOW.md) for startup,
 sample files, import settings, review rules and browser verification.
 See [the local CSV engine guide](services/worker/README.md) for the callable API,
@@ -57,7 +59,7 @@ server upload lifecycle, local-only safety rules and real local stack checks.
 - `packages/contracts`: canonical v1 JSON Schemas, generated TypeScript types and runtime validation.
 - `services/worker`: installable local CSV/XLSX/PDF job worker, offline contract validation and `DocumentExtractor` protocol.
 - `tests/fixtures/contracts`: synthetic boundary fixtures shared by both language test suites.
-- `apps/web/server` and `api`: local-only authenticated upload intent/finalization, Python XLSX/PDF inspection and trusted CSV export.
+- `apps/web/server` and `api`: authenticated private upload/finalization and trusted CSV export; hosted CPU PDF inspection/extraction are default-off; XLSX inspection remains local.
 - `supabase`: local configuration, fifteen-table schema and native PostgreSQL RLS/job/review/security tests.
 - `.github/workflows/ci.yml`: locked installs, schema drift, typechecks, JS/database/Python tests, builds and CPU image smoke check.
 
@@ -102,13 +104,15 @@ uv sync --locked
 uv run --locked ruff check .
 uv run --locked ruff format --check .
 uv run --locked pytest
-uv run --locked stockshift-worker
+uv run --locked stockshift-worker --check
 uv run --locked python -c "from stockshift_worker.extraction.base import DocumentExtractor"
 uv build --no-sources
 ```
 
-The default CLI prints readiness and exits. Use `stockshift-worker --once` or
-`--poll` with local-only configuration to process durable jobs; see the worker guide.
+The default CLI polls durable jobs until SIGTERM/SIGINT. Use `--check` for a
+credential-free import smoke, or `--once` to process at most one eligible job.
+Local launchers remain loopback-only; explicit hosted mode permits CSV preview
+jobs through the HTTPS gateway. See the worker guide.
 uv uses `.python-version` and may obtain that interpreter if it is missing. uv itself
 is a development tool, not a worker runtime dependency. If it is not installed,
 a repository-local bootstrap on Windows is:
@@ -147,19 +151,27 @@ The web app manifest repeats the root Node `>=22.12.0 <23` and npm `>=10 <11`
 engines so Vercel selects Node 22.x from its project root. Node 22 uses npm 10 on
 Vercel; both manifests declare `npm@10.9.4`. Local development and CI use Node
 `22.21.0` from `.nvmrc`; `engine-strict=true` continues to reject incompatible tools.
-The web shell is deployed; the upload endpoint and CSV worker remain restricted
-to the local Supabase API. This increment performs no hosted operations.
+The deployed web shell currently has no workspace configuration. Explicit hosted
+browser/API configuration is prepared locally; local launchers and the durable
+Python LocalGateway retain their loopback restrictions. Explicit hosted CSV mode
+now uses a separate HTTPS gateway and the default durable polling entrypoint.
+The compatible preview Supabase project and worker host remain unprovisioned;
+PDF processing remains default-off and hosted XLSX is unavailable. See
+[the preview readiness and commit/deployment plan](docs/CHUNK_10_PREVIEW_RELEASE.md).
+Preparation performs no hosted data operations or deployment.
 
 With Docker available, from the repository root:
 
 ```sh
 docker build -t stockshift-worker:local services/worker
-docker run --rm stockshift-worker:local
+docker run --rm --network none stockshift-worker:local stockshift-worker --check
 ```
 
 The CPU image installs locked runtime dependencies, includes packaged schemas and runs
-as a non-root user. Its default entrypoint exits after a credential-free smoke message.
-The local worker runs on the host; the container smoke check does not connect to Supabase.
+as a non-root user. Its default entrypoint polls until SIGTERM/SIGINT, draining the current job.
+Use `stockshift-worker --check` for a credential-free import smoke. Hosted mode is
+CSV only until the separately gated CPU PDF capabilities are approved. The browser acceptance suite can run the default container entrypoint
+against Docker-backed local Supabase and verify graceful SIGTERM shutdown.
 
 ## CSV implementation
 
@@ -191,7 +203,7 @@ inspectable failed/dead-letter jobs. See [the worker lifecycle guide](services/w
 Run `npm run test:local` after installing the Python worker and starting/resetting
 local Supabase. It runs native SQL security/job tests plus real Auth/Storage/Python
 worker integration. CI uses this Docker-backed path. Hosted projects must not be
-accessed without separate approval. There is no persistent review UI yet.
+accessed without separate approval. Persisted review and provenance remain required before export.
 
 ## Increment 7: digital PDF ingestion and correction
 

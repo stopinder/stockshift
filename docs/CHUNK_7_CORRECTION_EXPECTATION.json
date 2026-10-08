@@ -1,0 +1,22 @@
+{
+  "scenario": "Separate corrected run; the benchmark baseline remains unchanged",
+  "source": "synthetic/new-catalogue.pdf",
+  "supplier_sku": "00042",
+  "original_new_cost": "4.20",
+  "corrected_new_cost": "5.25",
+  "expected_outcome": "unchanged",
+  "expected_old_cost": "5.25",
+  "expected_cost_delta": "0.00",
+  "expected_cost_change_percent": "0.000000",
+  "expected_change_flags": [],
+  "expected_counts": {
+    "unchanged": 2,
+    "changed": 2,
+    "new": 1,
+    "absent": 1,
+    "needs_review": 0
+  },
+  "expected_export_skus": ["00123", "08001"],
+  "other_results": "All other outcomes, values and export cells equal the benchmark manifest",
+  "provenance": "Original extracted cost remains 4.20; 5.25 is stored only in the explicit correction revision"
+}

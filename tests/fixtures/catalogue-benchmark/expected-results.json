@@ -1,0 +1,5608 @@
+{
+  "schema_version": 1,
+  "prepared_on": "2026-10-08",
+  "path_base": "C:\\Users\\Rob\\WebstormProjects\\stockshift",
+  "scope": "Offline preparation only; no application workflow or model inference executed",
+  "policy": {
+    "money": "Exact decimal strings; preserve source precision",
+    "unknown": "Null plus unresolved status; raw UOM, length and box quantities do not establish price denominator",
+    "oracle": "Existing independently transcribed expected files; never OCR output",
+    "pages": "One-based fixture and original source pages are distinct"
+  },
+  "real_catalogues": [
+    {
+      "id": "smiths",
+      "file": "services/worker/tests/fixtures/catalogue_layout/clean-catalogue.pdf",
+      "sha256": "06556c2f1fa426f8a082d678abc1b9ce3f02c637a5932e9652e5bcd7580d7a3e",
+      "original_file": ".tools/catalogue-acceptance/sources/smiths.pdf",
+      "original_sha256": "aa2b70ee55ec41632ae6a47392574241bbc0d90b62a460227f761e81976db2da",
+      "expected_file": "services/worker/tests/fixtures/catalogue_layout/expected-rows.json",
+      "expected_sha256": "d52bb05d9e6ff31ad153d5fca6067ca398107585f5465e732da3121cdb47e945",
+      "association_file": "services/worker/tests/fixtures/catalogue_layout/smiths-association.json",
+      "response_file": "services/worker/tests/fixtures/catalogue_layout/smiths-response.json",
+      "response_file_sha256": "89c7bfb3738c6259b87590e2246ac4934fe6b119104e59b2852fcaaee8008246",
+      "response_canonical_sha256": "c17401f53dc41320b81fe0c2e34f8afffa47375f46c35910efc8980c8c9d6438",
+      "model_revision": "c5630abae1d940eafe0697512a0325494b02ab42",
+      "expected_product_count": 6,
+      "rows": [
+        {
+          "sku": "HPCA20001",
+          "description": "CASPIAN UV 60 EC",
+          "price": "1442.00",
+          "currency": "GBP",
+          "price_role": "retail_guidance",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": null,
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/clean-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/smiths.pdf",
+            "original_page": 4,
+            "url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "table": "1",
+            "expected_product_row": 1
+          },
+          "raw_source_fields": {
+            "case": "clean",
+            "page": "1",
+            "table": "1",
+            "row": "1",
+            "sku": "HPCA20001",
+            "description": "CASPIAN UV 60 EC",
+            "price": "1442.00",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "source_page": "4",
+            "raw_price": "£1,442.00",
+            "price_header": "Price (ex. VAT)",
+            "tax_basis": "net",
+            "pricing_unit_raw": "",
+            "section": "Caspian UV Hydronic (EC Motors)",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "",
+            "other_price_inc_vat": "1730.40",
+            "dispatch_code": "C",
+            "notes": "Retail guide, not wholesale cost; inc. VAT price is a different column. Pack/UOM not stated. Dispatch code C is not part of SKU."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "HPCA26203",
+          "description": "CASPIAN UV 75 EC",
+          "price": "1619.00",
+          "currency": "GBP",
+          "price_role": "retail_guidance",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": null,
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/clean-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/smiths.pdf",
+            "original_page": 4,
+            "url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "table": "1",
+            "expected_product_row": 2
+          },
+          "raw_source_fields": {
+            "case": "clean",
+            "page": "1",
+            "table": "1",
+            "row": "2",
+            "sku": "HPCA26203",
+            "description": "CASPIAN UV 75 EC",
+            "price": "1619.00",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "source_page": "4",
+            "raw_price": "£1,619.00",
+            "price_header": "Price (ex. VAT)",
+            "tax_basis": "net",
+            "pricing_unit_raw": "",
+            "section": "Caspian UV Hydronic (EC Motors)",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "",
+            "other_price_inc_vat": "1942.80",
+            "dispatch_code": "C",
+            "notes": "Retail guide, not wholesale cost; inc. VAT price is a different column. Pack/UOM not stated. Dispatch code C is not part of SKU."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "HPCA20002",
+          "description": "CASPIAN UV 90 EC",
+          "price": "1797.00",
+          "currency": "GBP",
+          "price_role": "retail_guidance",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": null,
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/clean-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/smiths.pdf",
+            "original_page": 4,
+            "url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "table": "1",
+            "expected_product_row": 3
+          },
+          "raw_source_fields": {
+            "case": "clean",
+            "page": "1",
+            "table": "1",
+            "row": "3",
+            "sku": "HPCA20002",
+            "description": "CASPIAN UV 90 EC",
+            "price": "1797.00",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "source_page": "4",
+            "raw_price": "£1,797.00",
+            "price_header": "Price (ex. VAT)",
+            "tax_basis": "net",
+            "pricing_unit_raw": "",
+            "section": "Caspian UV Hydronic (EC Motors)",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "",
+            "other_price_inc_vat": "2156.40",
+            "dispatch_code": "C",
+            "notes": "Retail guide, not wholesale cost; inc. VAT price is a different column. Pack/UOM not stated. Dispatch code C is not part of SKU."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "HPCA20003",
+          "description": "CASPIAN UV 120 EC",
+          "price": "2038.00",
+          "currency": "GBP",
+          "price_role": "retail_guidance",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": null,
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/clean-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/smiths.pdf",
+            "original_page": 4,
+            "url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "table": "1",
+            "expected_product_row": 4
+          },
+          "raw_source_fields": {
+            "case": "clean",
+            "page": "1",
+            "table": "1",
+            "row": "4",
+            "sku": "HPCA20003",
+            "description": "CASPIAN UV 120 EC",
+            "price": "2038.00",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "source_page": "4",
+            "raw_price": "£2,038.00",
+            "price_header": "Price (ex. VAT)",
+            "tax_basis": "net",
+            "pricing_unit_raw": "",
+            "section": "Caspian UV Hydronic (EC Motors)",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "",
+            "other_price_inc_vat": "2445.60",
+            "dispatch_code": "C",
+            "notes": "Retail guide, not wholesale cost; inc. VAT price is a different column. Pack/UOM not stated. Dispatch code C is not part of SKU."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "HPCA20004",
+          "description": "CASPIAN UV 150 EC",
+          "price": "2257.00",
+          "currency": "GBP",
+          "price_role": "retail_guidance",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": null,
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/clean-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/smiths.pdf",
+            "original_page": 4,
+            "url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "table": "1",
+            "expected_product_row": 5
+          },
+          "raw_source_fields": {
+            "case": "clean",
+            "page": "1",
+            "table": "1",
+            "row": "5",
+            "sku": "HPCA20004",
+            "description": "CASPIAN UV 150 EC",
+            "price": "2257.00",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "source_page": "4",
+            "raw_price": "£2,257.00",
+            "price_header": "Price (ex. VAT)",
+            "tax_basis": "net",
+            "pricing_unit_raw": "",
+            "section": "Caspian UV Hydronic (EC Motors)",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "",
+            "other_price_inc_vat": "2708.40",
+            "dispatch_code": "C",
+            "notes": "Retail guide, not wholesale cost; inc. VAT price is a different column. Pack/UOM not stated. Dispatch code C is not part of SKU."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "HPCA20005",
+          "description": "CASPIAN UV 180 EC",
+          "price": "2499.00",
+          "currency": "GBP",
+          "price_role": "retail_guidance",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": null,
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/clean-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/smiths.pdf",
+            "original_page": 4,
+            "url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "table": "1",
+            "expected_product_row": 6
+          },
+          "raw_source_fields": {
+            "case": "clean",
+            "page": "1",
+            "table": "1",
+            "row": "6",
+            "sku": "HPCA20005",
+            "description": "CASPIAN UV 180 EC",
+            "price": "2499.00",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://smithsep.co.uk/wp-content/uploads/2025/09/SMTH_A4_Price-List_september_2025_SP.pdf",
+            "source_page": "4",
+            "raw_price": "£2,499.00",
+            "price_header": "Price (ex. VAT)",
+            "tax_basis": "net",
+            "pricing_unit_raw": "",
+            "section": "Caspian UV Hydronic (EC Motors)",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "",
+            "other_price_inc_vat": "2998.80",
+            "dispatch_code": "C",
+            "notes": "Retail guide, not wholesale cost; inc. VAT price is a different column. Pack/UOM not stated. Dispatch code C is not part of SKU."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        }
+      ]
+    },
+    {
+      "id": "blindtex",
+      "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+      "sha256": "540ea2745e7f7d64d40c812dc97ea4f0379f833c57d3443e56b69fa9ce2c87c0",
+      "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+      "original_sha256": "2f4fec9ea398db2104cd87c62d32dee03146711baf9984dd862dfd263bd79e34",
+      "expected_file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-page-1-expected.json",
+      "expected_sha256": "5ce5091f74b98d98ed0286c1db190d42e502385535c681fea38c70561e0a5cc8",
+      "association_file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-page-1-association.json",
+      "response_file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-page-1-response.json",
+      "response_file_sha256": "ef2343241541165eda7849588d10205441c7deac2f6c4e7e7db7fadb7b7409dc",
+      "response_canonical_sha256": "ef5610286d07a682ee0e18912c80496f56fa6985108161ec2feb5352ddee7478",
+      "model_revision": "c5630abae1d940eafe0697512a0325494b02ab42",
+      "expected_product_count": 10,
+      "rows": [
+        {
+          "sku": "RCM030WH",
+          "description": "Small Cassette White",
+          "price": "238.40",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Mtr",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 1
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "1",
+            "sku": "RCM030WH",
+            "description": "Small Cassette White",
+            "price": "238.40",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "Mtr",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "238.40",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "Mtr",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "4",
+            "box_qty_mts": "23.2",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "White",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM030GR",
+          "description": "Small Cassette Graphite",
+          "price": "238.45",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Mtr",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 2
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "2",
+            "sku": "RCM030GR",
+            "description": "Small Cassette Graphite",
+            "price": "238.45",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "Mtr",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "238.45",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "Mtr",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "4",
+            "box_qty_mts": "23.2",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "Graphite",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM112WH",
+          "description": "Large Cassette White",
+          "price": "314.10",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Mtr",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 3
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "3",
+            "sku": "RCM112WH",
+            "description": "Large Cassette White",
+            "price": "314.10",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "Mtr",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "314.10",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "Mtr",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "4",
+            "box_qty_mts": "23.2",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "White",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM112GR",
+          "description": "Large Cassette Graphite",
+          "price": "314.10",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Mtr",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 4
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "4",
+            "sku": "RCM112GR",
+            "description": "Large Cassette Graphite",
+            "price": "314.10",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "Mtr",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "314.10",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "Mtr",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "4",
+            "box_qty_mts": "23.2",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "Graphite",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM149WH",
+          "description": "Medium Cassette White",
+          "price": "264.41",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Mtr",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 5
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "5",
+            "sku": "RCM149WH",
+            "description": "Medium Cassette White",
+            "price": "264.41",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "Mtr",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "264.41",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "Mtr",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "4",
+            "box_qty_mts": "23.2",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "White",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM149GR",
+          "description": "Medium Cassette Graphite",
+          "price": "264.41",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Mtr",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 6
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "6",
+            "sku": "RCM149GR",
+            "description": "Medium Cassette Graphite",
+            "price": "264.41",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "Mtr",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "264.41",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "Mtr",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "4",
+            "box_qty_mts": "23.2",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "Graphite",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM057WHLO",
+          "description": "Small Cas End Cap White",
+          "price": "198.97",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "R/L Set",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 7
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "7",
+            "sku": "RCM057WHLO",
+            "description": "Small Cas End Cap White",
+            "price": "198.97",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "R/L Set",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "198.97",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "R/L Set",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "250",
+            "box_qty_mts": "250",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "White",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM057GELO",
+          "description": "Small Cas End Cap Graphite",
+          "price": "198.97",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "R/L Set",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 8
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "8",
+            "sku": "RCM057GELO",
+            "description": "Small Cas End Cap Graphite",
+            "price": "198.97",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "R/L Set",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "198.97",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "R/L Set",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "250",
+            "box_qty_mts": "250",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "Graphite",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM135WHLO",
+          "description": "Large Cas End Cap White",
+          "price": "106.87",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "R/L Set",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 9
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "9",
+            "sku": "RCM135WHLO",
+            "description": "Large Cas End Cap White",
+            "price": "106.87",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "R/L Set",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "106.87",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "R/L Set",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "100",
+            "box_qty_mts": "100",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "White",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "RCM135GELO",
+          "description": "Large Cas End Cap Graphite",
+          "price": "106.87",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "R/L Set",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/awkward-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/blindtex.pdf",
+            "original_page": 3,
+            "url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "table": "1",
+            "expected_product_row": 10
+          },
+          "raw_source_fields": {
+            "case": "awkward",
+            "page": "1",
+            "table": "1",
+            "row": "10",
+            "sku": "RCM135GELO",
+            "description": "Large Cas End Cap Graphite",
+            "price": "106.87",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "R/L Set",
+            "source_url": "https://www.blindtex.co.uk/resources/UK-Wholesale-Pricelist-2025-V4.pdf",
+            "source_page": "3",
+            "raw_price": "106.87",
+            "price_header": "Selling Price in (GBP)",
+            "tax_basis": "",
+            "pricing_unit_raw": "R/L Set",
+            "section": "COMPONENTS",
+            "box_qty_pcs": "100",
+            "box_qty_mts": "100",
+            "raw_qty": "",
+            "size": "",
+            "length": "",
+            "finish": "",
+            "colour": "Graphite",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "UOM retained literally. Box quantities preserved separately. Selling price basis and VAT unspecified; no division by quantity."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        }
+      ]
+    },
+    {
+      "id": "fixmart-channel",
+      "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+      "sha256": "8d0d5e4ab2c2e2205d4052e97fa2b166a473a84c70dd799022b25fb4a9fb2ae7",
+      "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+      "original_sha256": "8971913903da6001166973e0929efa09073c20a50c85cef1f96a3b47fa5bf406",
+      "expected_file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-page-1-expected.json",
+      "expected_sha256": "62015b41cbaedd7b4e3045aeae25f49d337ec43ff1f4935444f73d2a1c0e1a90",
+      "association_file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-page-1-association.json",
+      "response_file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-page-1-response.json",
+      "response_file_sha256": "0f0fe3aa9e09662bf706ef3a9a86d1c22521e2fad241f54d87828b3ea86f363a",
+      "response_canonical_sha256": "402a2f7c688a123d4e545a897ebe31c081bb257acda21fbd0ad43b37e126c853",
+      "model_revision": "c5630abae1d940eafe0697512a0325494b02ab42",
+      "expected_product_count": 5,
+      "rows": [
+        {
+          "sku": "2011 01005",
+          "description": "41 x 21",
+          "price": "5.97",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Length: 3m",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 1,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 1
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "1",
+            "table": "1",
+            "row": "1",
+            "sku": "2011 01005",
+            "description": "41 x 21",
+            "price": "5.97",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "1",
+            "raw_price": "£5.97",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Length: 3m",
+            "section": "Channel",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "41 x 21",
+            "length": "3m",
+            "finish": "PG",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Description field maps literal Size cell; category is separate. Length is a product attribute, not a per-metre price. Pack/UOM not stated. Preserve full code including internal space."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "2011 01009",
+          "description": "41 x 41",
+          "price": "8.37",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Length: 3m",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 1,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 2
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "1",
+            "table": "1",
+            "row": "2",
+            "sku": "2011 01009",
+            "description": "41 x 41",
+            "price": "8.37",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "1",
+            "raw_price": "£8.37",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Length: 3m",
+            "section": "Channel",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "41 x 41",
+            "length": "3m",
+            "finish": "PG",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Description field maps literal Size cell; category is separate. Length is a product attribute, not a per-metre price. Pack/UOM not stated. Preserve full code including internal space."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "2011 01010",
+          "description": "41 x 41",
+          "price": "19.98",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Length: 6m",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 1,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 3
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "1",
+            "table": "1",
+            "row": "3",
+            "sku": "2011 01010",
+            "description": "41 x 41",
+            "price": "19.98",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "1",
+            "raw_price": "£19.98",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Length: 6m",
+            "section": "Channel",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "41 x 41",
+            "length": "6m",
+            "finish": "PG",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Description field maps literal Size cell; category is separate. Length is a product attribute, not a per-metre price. Pack/UOM not stated. Preserve full code including internal space."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "2011 11256",
+          "description": "41 x 21",
+          "price": "10.68",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Length: 3m",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 1,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 4
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "1",
+            "table": "1",
+            "row": "4",
+            "sku": "2011 11256",
+            "description": "41 x 21",
+            "price": "10.68",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "1",
+            "raw_price": "£10.68",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Length: 3m",
+            "section": "Channel",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "41 x 21",
+            "length": "3m",
+            "finish": "HDG",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Description field maps literal Size cell; category is separate. Length is a product attribute, not a per-metre price. Pack/UOM not stated. Preserve full code including internal space."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "2011 11254",
+          "description": "41 x 41",
+          "price": "14.97",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Length: 3m",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 1,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 1,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 5
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "1",
+            "table": "1",
+            "row": "5",
+            "sku": "2011 11254",
+            "description": "41 x 41",
+            "price": "14.97",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "1",
+            "raw_price": "£14.97",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Length: 3m",
+            "section": "Channel",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "",
+            "size": "41 x 41",
+            "length": "3m",
+            "finish": "HDG",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Description field maps literal Size cell; category is separate. Length is a product attribute, not a per-metre price. Pack/UOM not stated. Preserve full code including internal space."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        }
+      ]
+    },
+    {
+      "id": "fixmart-studding",
+      "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+      "sha256": "8d0d5e4ab2c2e2205d4052e97fa2b166a473a84c70dd799022b25fb4a9fb2ae7",
+      "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+      "original_sha256": "8971913903da6001166973e0929efa09073c20a50c85cef1f96a3b47fa5bf406",
+      "expected_file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-page-2-expected.json",
+      "expected_sha256": "563be96a4f444a6c03dc7ad77fda4fdd0acd735fbe56ec5a708340d0f9b29bd9",
+      "association_file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-page-2-association.json",
+      "response_file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-page-2-response.json",
+      "response_file_sha256": "196c30d0803a57c6a1df3d037b2e8bca369eecf683a3bc6b2f8ab725bf2b9dd0",
+      "response_canonical_sha256": "8405959a17eaa0799310160f056f7fdc8aabd4494fab874108457f800152b1fe",
+      "model_revision": "c5630abae1d940eafe0697512a0325494b02ab42",
+      "expected_product_count": 4,
+      "rows": [
+        {
+          "sku": "4020 03142",
+          "description": "M6",
+          "price": "0.87",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Studding 3m Lengths",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 2,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 2,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 1
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "2",
+            "table": "1",
+            "row": "1",
+            "sku": "4020 03142",
+            "description": "M6",
+            "price": "0.87",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "2",
+            "raw_price": "£0.87",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Studding 3m Lengths",
+            "section": "Studding 3m Lengths",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "1",
+            "size": "M6",
+            "length": "",
+            "finish": "BZP",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Qty column retained raw; its semantics are not stated, so pack stays blank. Description maps literal Size cell; category retained separately. No per-metre conversion."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "4020 11507",
+          "description": "M8",
+          "price": "1.05",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Studding 3m Lengths",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 2,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 2,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 2
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "2",
+            "table": "1",
+            "row": "2",
+            "sku": "4020 11507",
+            "description": "M8",
+            "price": "1.05",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "2",
+            "raw_price": "£1.05",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Studding 3m Lengths",
+            "section": "Studding 3m Lengths",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "1",
+            "size": "M8",
+            "length": "",
+            "finish": "BZP",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Qty column retained raw; its semantics are not stated, so pack stays blank. Description maps literal Size cell; category retained separately. No per-metre conversion."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "4020 03145",
+          "description": "M10",
+          "price": "1.56",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Studding 3m Lengths",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 2,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 2,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 3
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "2",
+            "table": "1",
+            "row": "3",
+            "sku": "4020 03145",
+            "description": "M10",
+            "price": "1.56",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "2",
+            "raw_price": "£1.56",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Studding 3m Lengths",
+            "section": "Studding 3m Lengths",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "1",
+            "size": "M10",
+            "length": "",
+            "finish": "BZP",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Qty column retained raw; its semantics are not stated, so pack stays blank. Description maps literal Size cell; category retained separately. No per-metre conversion."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        },
+        {
+          "sku": "4020 03147",
+          "description": "M12",
+          "price": "2.78",
+          "currency": "GBP",
+          "price_role": "supplier_price",
+          "tax_basis": {
+            "value": "net",
+            "status": "known",
+            "evidence": "Existing independent source transcription and association"
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "raw_uom": "Studding 3m Lengths",
+          "source": {
+            "file": "services/worker/tests/fixtures/catalogue_layout/remaining/mixed-catalogue.pdf",
+            "fixture_page": 2,
+            "original_file": ".tools/catalogue-acceptance/sources/fixmart.pdf",
+            "original_page": 2,
+            "url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "table": "1",
+            "expected_product_row": 4
+          },
+          "raw_source_fields": {
+            "case": "mixed",
+            "page": "2",
+            "table": "1",
+            "row": "4",
+            "sku": "4020 03147",
+            "description": "M12",
+            "price": "2.78",
+            "currency": "GBP",
+            "pack": "",
+            "uom": "",
+            "source_url": "https://cdn.fixmart.co.uk/uploads/asset_file/2_16_wholesalers-distribution-price-list-november-2025.pdf",
+            "source_page": "2",
+            "raw_price": "£2.78",
+            "price_header": "Price",
+            "tax_basis": "net",
+            "pricing_unit_raw": "Studding 3m Lengths",
+            "section": "Studding 3m Lengths",
+            "box_qty_pcs": "",
+            "box_qty_mts": "",
+            "raw_qty": "1",
+            "size": "M12",
+            "length": "",
+            "finish": "BZP",
+            "colour": "",
+            "other_price_inc_vat": "",
+            "dispatch_code": "",
+            "notes": "Qty column retained raw; its semantics are not stated, so pack stays blank. Description maps literal Size cell; category retained separately. No per-metre conversion."
+          },
+          "expected_gate": "review_only; prohibit wholesale-cost confirmation/export"
+        }
+      ]
+    }
+  ],
+  "legacy_synthetic": [
+    {
+      "id": "gpu-smoke-clean",
+      "expected_file": ".tools/gpu-smoke/fixtures.json",
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "19.995",
+          "price_status": "known",
+          "description": "Precision component 17",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/clean.pdf",
+            "page": 1,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00042",
+          "price": "5.25",
+          "price_status": "known",
+          "description": "Valve assembly 38",
+          "currency": "GBP",
+          "raw_pack": "6",
+          "raw_uom": "box",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/clean.pdf",
+            "page": 1,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00756",
+          "price": "0.80",
+          "price_status": "known",
+          "description": "Seal ring 56",
+          "currency": "GBP",
+          "raw_pack": "10",
+          "raw_uom": "pack",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/clean.pdf",
+            "page": 1,
+            "product_row": 3
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "08001",
+          "price": "1234.56",
+          "price_status": "known",
+          "description": "Industrial pump 01",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/clean.pdf",
+            "page": 1,
+            "product_row": 4
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        }
+      ]
+    },
+    {
+      "id": "gpu-smoke-awkward",
+      "expected_file": ".tools/gpu-smoke/fixtures.json",
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "19.995",
+          "price_status": "known",
+          "description": "Precision component 17",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/awkward.pdf",
+            "page": 1,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00042",
+          "price": "5.25",
+          "price_status": "known",
+          "description": "Valve assembly 38",
+          "currency": "GBP",
+          "raw_pack": "6",
+          "raw_uom": "box",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/awkward.pdf",
+            "page": 1,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00756",
+          "price": "0.80",
+          "price_status": "known",
+          "description": "Seal ring 56",
+          "currency": "GBP",
+          "raw_pack": "10",
+          "raw_uom": "pack",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/awkward.pdf",
+            "page": 1,
+            "product_row": 3
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "08001",
+          "price": "1234.56",
+          "price_status": "known",
+          "description": "Industrial pump 01",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/awkward.pdf",
+            "page": 1,
+            "product_row": 4
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        }
+      ]
+    },
+    {
+      "id": "gpu-smoke-catalogue",
+      "expected_file": ".tools/gpu-smoke/fixtures.json",
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "19.995",
+          "price_status": "known",
+          "description": "Precision component 17",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/catalogue.pdf",
+            "page": 1,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00042",
+          "price": "5.25",
+          "price_status": "known",
+          "description": "Valve assembly 38",
+          "currency": "GBP",
+          "raw_pack": "6",
+          "raw_uom": "box",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/catalogue.pdf",
+            "page": 1,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00756",
+          "price": "0.80",
+          "price_status": "known",
+          "description": "Seal ring 56",
+          "currency": "GBP",
+          "raw_pack": "10",
+          "raw_uom": "pack",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/catalogue.pdf",
+            "page": 2,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "08001",
+          "price": "1234.56",
+          "price_status": "known",
+          "description": "Industrial pump 01",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/catalogue.pdf",
+            "page": 2,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        }
+      ]
+    },
+    {
+      "id": "gpu-smoke-purchase-order",
+      "expected_file": ".tools/gpu-smoke/fixtures.json",
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "19.995",
+          "price_status": "known",
+          "description": "Precision component 17",
+          "currency": "GBP",
+          "raw_qty": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/purchase-order.pdf",
+            "page": 1,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00042",
+          "price": "5.25",
+          "price_status": "known",
+          "description": "Valve assembly 38",
+          "currency": "GBP",
+          "raw_qty": "6",
+          "raw_uom": "box",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/gpu-smoke/purchase-order.pdf",
+            "page": 1,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        }
+      ]
+    },
+    {
+      "id": "ocr-real-smoke-clean-scanned.pdf",
+      "expected_file": ".tools/ocr-real-smoke/manifest.json",
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "1.001000000000000000",
+          "price_status": "known",
+          "description": "Precision component",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/clean-scanned.pdf",
+            "page": 1,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "REVIEW",
+          "price": null,
+          "price_status": "unresolved",
+          "description": "Missing price",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/clean-scanned.pdf",
+            "page": 1,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00042",
+          "price": "5.25",
+          "price_status": "known",
+          "description": "Second page component",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/clean-scanned.pdf",
+            "page": 2,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        }
+      ]
+    },
+    {
+      "id": "ocr-real-smoke-awkward-scanned.pdf",
+      "expected_file": ".tools/ocr-real-smoke/manifest.json",
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "1.001000000000000000",
+          "price_status": "known",
+          "description": "Precision component",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/awkward-scanned.pdf",
+            "page": 1,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "REVIEW",
+          "price": null,
+          "price_status": "unresolved",
+          "description": "Missing price",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/awkward-scanned.pdf",
+            "page": 1,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        }
+      ]
+    },
+    {
+      "id": "ocr-real-smoke-mixed-catalogue.pdf",
+      "expected_file": ".tools/ocr-real-smoke/manifest.json",
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "1.001000000000000000",
+          "price_status": "known",
+          "description": "Precision component",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/mixed-catalogue.pdf",
+            "page": 1,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "REVIEW",
+          "price": null,
+          "price_status": "unresolved",
+          "description": "Missing price",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/mixed-catalogue.pdf",
+            "page": 1,
+            "product_row": 2
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        },
+        {
+          "sku": "00042",
+          "price": "5.25",
+          "price_status": "known",
+          "description": "Second page component",
+          "currency": "GBP",
+          "raw_pack": "1",
+          "raw_uom": "each",
+          "tax_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "price_basis": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "pack_quantity": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "unit": {
+            "value": null,
+            "status": "unresolved",
+            "evidence": null
+          },
+          "source": {
+            "file": ".tools/ocr-real-smoke/mixed-catalogue.pdf",
+            "page": 2,
+            "product_row": 1
+          },
+          "expected_gate": "extraction_only; unresolved pricing bases"
+        }
+      ]
+    }
+  ],
+  "csv_controls": [
+    {
+      "file": "tests/fixtures/csv/old_catalogue.csv",
+      "sha256": "0888c17e9e468274ba44794038b132d1d662a7c1176118cdddd74ec9e30c9fc3",
+      "expected_product_count": 89,
+      "basis_evidence": "tests/fixtures/csv/README.md explicit invented fixture specification, not supplier evidence",
+      "rows": [
+        {
+          "sku": "000001",
+          "description": "Industrial connector 1",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 2
+          }
+        },
+        {
+          "sku": "000002",
+          "description": "Industrial connector 2",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 3
+          }
+        },
+        {
+          "sku": "000003",
+          "description": "Industrial connector 3",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 4
+          }
+        },
+        {
+          "sku": "000004",
+          "description": "Industrial connector 4",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 5
+          }
+        },
+        {
+          "sku": "000005",
+          "description": "Industrial connector 5",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 6
+          }
+        },
+        {
+          "sku": "000006",
+          "description": "Industrial connector 6",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 7
+          }
+        },
+        {
+          "sku": "000007",
+          "description": "Industrial connector 7",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 8
+          }
+        },
+        {
+          "sku": "000008",
+          "description": "Industrial connector 8",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 9
+          }
+        },
+        {
+          "sku": "000009",
+          "description": "Industrial connector 9",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 10
+          }
+        },
+        {
+          "sku": "000010",
+          "description": "Industrial connector 10",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 11
+          }
+        },
+        {
+          "sku": "000011",
+          "description": "Industrial connector 11",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 12
+          }
+        },
+        {
+          "sku": "000012",
+          "description": "Industrial connector 12",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 13
+          }
+        },
+        {
+          "sku": "000013",
+          "description": "Industrial connector 13",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 14
+          }
+        },
+        {
+          "sku": "000014",
+          "description": "Industrial connector 14",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 15
+          }
+        },
+        {
+          "sku": "000015",
+          "description": "Industrial connector 15",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 16
+          }
+        },
+        {
+          "sku": "000016",
+          "description": "Industrial connector 16",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 17
+          }
+        },
+        {
+          "sku": "000017",
+          "description": "Industrial connector 17",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 18
+          }
+        },
+        {
+          "sku": "000018",
+          "description": "Industrial connector 18",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 19
+          }
+        },
+        {
+          "sku": "000019",
+          "description": "Industrial connector 19",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 20
+          }
+        },
+        {
+          "sku": "000020",
+          "description": "Industrial connector 20",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 21
+          }
+        },
+        {
+          "sku": "000021",
+          "description": "Industrial connector 21",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 22
+          }
+        },
+        {
+          "sku": "000022",
+          "description": "Industrial connector 22",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 23
+          }
+        },
+        {
+          "sku": "000023",
+          "description": "Industrial connector 23",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 24
+          }
+        },
+        {
+          "sku": "000024",
+          "description": "Industrial connector 24",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 25
+          }
+        },
+        {
+          "sku": "000025",
+          "description": "Industrial connector 25",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 26
+          }
+        },
+        {
+          "sku": "000026",
+          "description": "Industrial connector 26",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 27
+          }
+        },
+        {
+          "sku": "000027",
+          "description": "Industrial connector 27",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 28
+          }
+        },
+        {
+          "sku": "000028",
+          "description": "Industrial connector 28",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 29
+          }
+        },
+        {
+          "sku": "000029",
+          "description": "Industrial connector 29",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 30
+          }
+        },
+        {
+          "sku": "000030",
+          "description": "Industrial connector 30",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 31
+          }
+        },
+        {
+          "sku": "000031",
+          "description": "Industrial connector 31",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 32
+          }
+        },
+        {
+          "sku": "000032",
+          "description": "Industrial connector 32",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 33
+          }
+        },
+        {
+          "sku": "000033",
+          "description": "Industrial connector 33",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 34
+          }
+        },
+        {
+          "sku": "000034",
+          "description": "Industrial connector 34",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 35
+          }
+        },
+        {
+          "sku": "000035",
+          "description": "Industrial connector 35",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 36
+          }
+        },
+        {
+          "sku": "000036",
+          "description": "Industrial connector 36",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 37
+          }
+        },
+        {
+          "sku": "000037",
+          "description": "Industrial connector 37",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 38
+          }
+        },
+        {
+          "sku": "000038",
+          "description": "Industrial connector 38",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 39
+          }
+        },
+        {
+          "sku": "000039",
+          "description": "Industrial connector 39",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 40
+          }
+        },
+        {
+          "sku": "000040",
+          "description": "Industrial connector 40",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 41
+          }
+        },
+        {
+          "sku": "000041",
+          "description": "Industrial connector 41",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 42
+          }
+        },
+        {
+          "sku": "000042",
+          "description": "Industrial connector 42",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 43
+          }
+        },
+        {
+          "sku": "000043",
+          "description": "Industrial connector 43",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 44
+          }
+        },
+        {
+          "sku": "000044",
+          "description": "Industrial connector 44",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 45
+          }
+        },
+        {
+          "sku": "000045",
+          "description": "Industrial connector 45",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 46
+          }
+        },
+        {
+          "sku": "000046",
+          "description": "Industrial connector 46",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 47
+          }
+        },
+        {
+          "sku": "000047",
+          "description": "Industrial connector 47",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 48
+          }
+        },
+        {
+          "sku": "000048",
+          "description": "Industrial connector 48",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 49
+          }
+        },
+        {
+          "sku": "000049",
+          "description": "Industrial connector 49",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 50
+          }
+        },
+        {
+          "sku": "000050",
+          "description": "Industrial connector 50",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 51
+          }
+        },
+        {
+          "sku": "000051",
+          "description": "Industrial connector 51",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 52
+          }
+        },
+        {
+          "sku": "000052",
+          "description": "Industrial connector 52",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 53
+          }
+        },
+        {
+          "sku": "000053",
+          "description": "Industrial connector 53",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 54
+          }
+        },
+        {
+          "sku": "000054",
+          "description": "Industrial connector 54",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 55
+          }
+        },
+        {
+          "sku": "000055",
+          "description": "Industrial connector 55",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 56
+          }
+        },
+        {
+          "sku": "000056",
+          "description": "Industrial connector 56",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 57
+          }
+        },
+        {
+          "sku": "000057",
+          "description": "Industrial connector 57",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 58
+          }
+        },
+        {
+          "sku": "000058",
+          "description": "Industrial connector 58",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 59
+          }
+        },
+        {
+          "sku": "000059",
+          "description": "Industrial connector 59",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 60
+          }
+        },
+        {
+          "sku": "000060",
+          "description": "Industrial connector 60",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 61
+          }
+        },
+        {
+          "sku": "000061",
+          "description": "Industrial connector 61",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 62
+          }
+        },
+        {
+          "sku": "000062",
+          "description": "Industrial connector 62",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 63
+          }
+        },
+        {
+          "sku": "000063",
+          "description": "Industrial connector 63",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 64
+          }
+        },
+        {
+          "sku": "000064",
+          "description": "Industrial connector 64",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 65
+          }
+        },
+        {
+          "sku": "000065",
+          "description": "Industrial connector 65",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 66
+          }
+        },
+        {
+          "sku": "000066",
+          "description": "Industrial connector 66",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 67
+          }
+        },
+        {
+          "sku": "000067",
+          "description": "Industrial connector 67",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 68
+          }
+        },
+        {
+          "sku": "000068",
+          "description": "Industrial connector 68",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 69
+          }
+        },
+        {
+          "sku": "000069",
+          "description": "Industrial connector 69",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 70
+          }
+        },
+        {
+          "sku": "000070",
+          "description": "Industrial connector 70",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 71
+          }
+        },
+        {
+          "sku": "000071",
+          "description": "Industrial connector 71",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 72
+          }
+        },
+        {
+          "sku": "000072",
+          "description": "Industrial connector 72",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 73
+          }
+        },
+        {
+          "sku": "000073",
+          "description": "Industrial connector 73",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 74
+          }
+        },
+        {
+          "sku": "000074",
+          "description": "Industrial connector 74",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 75
+          }
+        },
+        {
+          "sku": "000075",
+          "description": "Industrial connector 75",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 76
+          }
+        },
+        {
+          "sku": "000076",
+          "description": "Industrial connector 76",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 77
+          }
+        },
+        {
+          "sku": "000077",
+          "description": "Industrial connector 77",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 78
+          }
+        },
+        {
+          "sku": "000078",
+          "description": "Industrial connector 78",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 79
+          }
+        },
+        {
+          "sku": "000079",
+          "description": "Industrial connector 79",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 80
+          }
+        },
+        {
+          "sku": "000080",
+          "description": "Industrial connector 80",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 81
+          }
+        },
+        {
+          "sku": "OLD0000",
+          "description": "Absent fitting 0",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 82
+          }
+        },
+        {
+          "sku": "OLD0001",
+          "description": "Absent fitting 1",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 83
+          }
+        },
+        {
+          "sku": "OLD0002",
+          "description": "Absent fitting 2",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 84
+          }
+        },
+        {
+          "sku": "OLD0003",
+          "description": "Absent fitting 3",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 85
+          }
+        },
+        {
+          "sku": "OLD0004",
+          "description": "Absent fitting 4",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 86
+          }
+        },
+        {
+          "sku": "OLD0005",
+          "description": "Absent fitting 5",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 87
+          }
+        },
+        {
+          "sku": "OLD0006",
+          "description": "Absent fitting 6",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 88
+          }
+        },
+        {
+          "sku": "OLD0007",
+          "description": "Absent fitting 7",
+          "price": "5.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 89
+          }
+        },
+        {
+          "sku": null,
+          "description": "Unidentified old fitting",
+          "price": "2.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/old_catalogue.csv",
+            "page": null,
+            "csv_line": 90
+          }
+        }
+      ]
+    },
+    {
+      "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+      "sha256": "a479068333ad3687653e910ea5d9c91e2eddbd4fffbc66d63d5bba7a37b05143",
+      "expected_product_count": 91,
+      "basis_evidence": "tests/fixtures/csv/README.md explicit invented fixture specification, not supplier evidence",
+      "rows": [
+        {
+          "sku": "000001",
+          "description": "Industrial connector 1",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 2
+          }
+        },
+        {
+          "sku": "000002",
+          "description": "Industrial connector 2",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 3
+          }
+        },
+        {
+          "sku": "000003",
+          "description": "Industrial connector 3",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 4
+          }
+        },
+        {
+          "sku": "000004",
+          "description": "Industrial connector 4",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 5
+          }
+        },
+        {
+          "sku": "000005",
+          "description": "Industrial connector 5",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 6
+          }
+        },
+        {
+          "sku": "000006",
+          "description": "Industrial connector 6",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 7
+          }
+        },
+        {
+          "sku": "000007",
+          "description": "Industrial connector 7",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 8
+          }
+        },
+        {
+          "sku": "000008",
+          "description": "Industrial connector 8",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 9
+          }
+        },
+        {
+          "sku": "000009",
+          "description": "Industrial connector 9",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 10
+          }
+        },
+        {
+          "sku": "000010",
+          "description": "Industrial connector 10",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 11
+          }
+        },
+        {
+          "sku": "000011",
+          "description": "Industrial connector 11",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 12
+          }
+        },
+        {
+          "sku": "000012",
+          "description": "Industrial connector 12",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 13
+          }
+        },
+        {
+          "sku": "000013",
+          "description": "Industrial connector 13",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 14
+          }
+        },
+        {
+          "sku": "000014",
+          "description": "Industrial connector 14",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 15
+          }
+        },
+        {
+          "sku": "000015",
+          "description": "Industrial connector 15",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 16
+          }
+        },
+        {
+          "sku": "000016",
+          "description": "Industrial connector 16",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 17
+          }
+        },
+        {
+          "sku": "000017",
+          "description": "Industrial connector 17",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 18
+          }
+        },
+        {
+          "sku": "000018",
+          "description": "Industrial connector 18",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 19
+          }
+        },
+        {
+          "sku": "000019",
+          "description": "Industrial connector 19",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 20
+          }
+        },
+        {
+          "sku": "000020",
+          "description": "Industrial connector 20",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 21
+          }
+        },
+        {
+          "sku": "000021",
+          "description": "Industrial connector 21",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 22
+          }
+        },
+        {
+          "sku": "000022",
+          "description": "Industrial connector 22",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 23
+          }
+        },
+        {
+          "sku": "000023",
+          "description": "Industrial connector 23",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 24
+          }
+        },
+        {
+          "sku": "000024",
+          "description": "Industrial connector 24",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 25
+          }
+        },
+        {
+          "sku": "000025",
+          "description": "Industrial connector 25",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 26
+          }
+        },
+        {
+          "sku": "000026",
+          "description": "Industrial connector 26",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 27
+          }
+        },
+        {
+          "sku": "000027",
+          "description": "Industrial connector 27",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 28
+          }
+        },
+        {
+          "sku": "000028",
+          "description": "Industrial connector 28",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 29
+          }
+        },
+        {
+          "sku": "000029",
+          "description": "Industrial connector 29",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 30
+          }
+        },
+        {
+          "sku": "000030",
+          "description": "Industrial connector 30",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 31
+          }
+        },
+        {
+          "sku": "000031",
+          "description": "Industrial connector 31",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 32
+          }
+        },
+        {
+          "sku": "000032",
+          "description": "Industrial connector 32",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 33
+          }
+        },
+        {
+          "sku": "000033",
+          "description": "Industrial connector 33",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 34
+          }
+        },
+        {
+          "sku": "000034",
+          "description": "Industrial connector 34",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 35
+          }
+        },
+        {
+          "sku": "000035",
+          "description": "Industrial connector 35",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 36
+          }
+        },
+        {
+          "sku": "000036",
+          "description": "Industrial connector 36",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 37
+          }
+        },
+        {
+          "sku": "000037",
+          "description": "Industrial connector 37",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 38
+          }
+        },
+        {
+          "sku": "000038",
+          "description": "Industrial connector 38",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 39
+          }
+        },
+        {
+          "sku": "000039",
+          "description": "Industrial connector 39",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 40
+          }
+        },
+        {
+          "sku": "000040",
+          "description": "Industrial connector 40",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 41
+          }
+        },
+        {
+          "sku": "000041",
+          "description": "Industrial connector 41",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 42
+          }
+        },
+        {
+          "sku": "000042",
+          "description": "Industrial connector 42",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 43
+          }
+        },
+        {
+          "sku": "000043",
+          "description": "Industrial connector 43",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 44
+          }
+        },
+        {
+          "sku": "000044",
+          "description": "Industrial connector 44",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 45
+          }
+        },
+        {
+          "sku": "000045",
+          "description": "Industrial connector 45",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 46
+          }
+        },
+        {
+          "sku": "000046",
+          "description": "Industrial connector 46",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 47
+          }
+        },
+        {
+          "sku": "000047",
+          "description": "Industrial connector 47",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 48
+          }
+        },
+        {
+          "sku": "000048",
+          "description": "Industrial connector 48",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 49
+          }
+        },
+        {
+          "sku": "000049",
+          "description": "Industrial connector 49",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 50
+          }
+        },
+        {
+          "sku": "000050",
+          "description": "Industrial connector 50",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 51
+          }
+        },
+        {
+          "sku": "000051",
+          "description": "Industrial connector 51",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 52
+          }
+        },
+        {
+          "sku": "000052",
+          "description": "Industrial connector 52",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 53
+          }
+        },
+        {
+          "sku": "000053",
+          "description": "Industrial connector 53",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 54
+          }
+        },
+        {
+          "sku": "000054",
+          "description": "Industrial connector 54",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 55
+          }
+        },
+        {
+          "sku": "000055",
+          "description": "Industrial connector 55",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 56
+          }
+        },
+        {
+          "sku": "000056",
+          "description": "Industrial connector 56",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 57
+          }
+        },
+        {
+          "sku": "000057",
+          "description": "Industrial connector 57",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 58
+          }
+        },
+        {
+          "sku": "000058",
+          "description": "Industrial connector 58",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 59
+          }
+        },
+        {
+          "sku": "000059",
+          "description": "Industrial connector 59",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 60
+          }
+        },
+        {
+          "sku": "000060",
+          "description": "Industrial connector 60",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 61
+          }
+        },
+        {
+          "sku": "000061",
+          "description": "Industrial connector 61",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 62
+          }
+        },
+        {
+          "sku": "000062",
+          "description": "Industrial connector 62",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 63
+          }
+        },
+        {
+          "sku": "000063",
+          "description": "Industrial connector 63",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 64
+          }
+        },
+        {
+          "sku": "000064",
+          "description": "Industrial connector 64",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 65
+          }
+        },
+        {
+          "sku": "000065",
+          "description": "Industrial connector 65",
+          "price": "11.2500",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 66
+          }
+        },
+        {
+          "sku": "000066",
+          "description": "Industrial connector 66",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 67
+          }
+        },
+        {
+          "sku": "000067",
+          "description": "Industrial connector 67",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 68
+          }
+        },
+        {
+          "sku": "000068",
+          "description": "Industrial connector 68",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 69
+          }
+        },
+        {
+          "sku": "000069",
+          "description": "Industrial connector 69",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 70
+          }
+        },
+        {
+          "sku": "000070",
+          "description": "Industrial connector 70",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 71
+          }
+        },
+        {
+          "sku": "000071",
+          "description": "Industrial connector 71",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 72
+          }
+        },
+        {
+          "sku": "000072",
+          "description": "Industrial connector 72",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 73
+          }
+        },
+        {
+          "sku": "000073",
+          "description": "Industrial connector 73",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 74
+          }
+        },
+        {
+          "sku": "000074",
+          "description": "Industrial connector 74",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 75
+          }
+        },
+        {
+          "sku": "000075",
+          "description": "Industrial connector 75",
+          "price": "9.5000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 76
+          }
+        },
+        {
+          "sku": "000076",
+          "description": "Renamed industrial connector 76",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 77
+          }
+        },
+        {
+          "sku": "000077",
+          "description": "Renamed industrial connector 77",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 78
+          }
+        },
+        {
+          "sku": "000078",
+          "description": "Renamed industrial connector 78",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 79
+          }
+        },
+        {
+          "sku": "000079",
+          "description": "Renamed industrial connector 79",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 80
+          }
+        },
+        {
+          "sku": "000080",
+          "description": "Renamed industrial connector 80",
+          "price": "10.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 81
+          }
+        },
+        {
+          "sku": "NEW0000",
+          "description": "New fitting 0",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 82
+          }
+        },
+        {
+          "sku": "NEW0001",
+          "description": "New fitting 1",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 83
+          }
+        },
+        {
+          "sku": "NEW0002",
+          "description": "New fitting 2",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 84
+          }
+        },
+        {
+          "sku": "NEW0003",
+          "description": "New fitting 3",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 85
+          }
+        },
+        {
+          "sku": "NEW0004",
+          "description": "New fitting 4",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 86
+          }
+        },
+        {
+          "sku": "NEW0005",
+          "description": "New fitting 5",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 87
+          }
+        },
+        {
+          "sku": "NEW0006",
+          "description": "New fitting 6",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 88
+          }
+        },
+        {
+          "sku": "NEW0007",
+          "description": "New fitting 7",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 89
+          }
+        },
+        {
+          "sku": "NEW0008",
+          "description": "New fitting 8",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 90
+          }
+        },
+        {
+          "sku": "NEW0009",
+          "description": "New fitting 9",
+          "price": "6.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 91
+          }
+        },
+        {
+          "sku": null,
+          "description": "Unidentified incoming fitting",
+          "price": "3.0000",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "source": {
+            "file": "tests/fixtures/csv/new_supplier_catalogue.csv",
+            "page": null,
+            "csv_line": 92
+          }
+        }
+      ]
+    }
+  ],
+  "synthetic_export_pair": {
+    "old": {
+      "file": "tests/fixtures/catalogue-benchmark/synthetic/old-catalogue.pdf",
+      "sha256": "da6986c765ee1472b6065399eba25a4b2331cbe779d8df41229cff9330b69aa1",
+      "expected_product_count": 5,
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "19.995",
+          "description": "Precision component 17",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/old-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 1
+          }
+        },
+        {
+          "sku": "00042",
+          "price": "5.25",
+          "description": "Valve assembly 38",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/old-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 2
+          }
+        },
+        {
+          "sku": "00756",
+          "price": "0.80",
+          "description": "Seal ring 56",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/old-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 3
+          }
+        },
+        {
+          "sku": "08001",
+          "price": "1234.56",
+          "description": "Industrial pump 01",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/old-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 4
+          }
+        },
+        {
+          "sku": "09000",
+          "price": "2.00",
+          "description": "Absent component",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/old-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 5
+          }
+        }
+      ]
+    },
+    "new": {
+      "file": "tests/fixtures/catalogue-benchmark/synthetic/new-catalogue.pdf",
+      "sha256": "734260aefc8b4639f3671703931bf4f700c05598169c2df4d6d680da8448c679",
+      "expected_product_count": 5,
+      "rows": [
+        {
+          "sku": "00123",
+          "price": "20.995",
+          "description": "Precision component 17",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/new-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 1
+          }
+        },
+        {
+          "sku": "00042",
+          "price": "4.20",
+          "description": "Valve assembly 38",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/new-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 2
+          }
+        },
+        {
+          "sku": "00756",
+          "price": "0.80",
+          "description": "Seal ring 56",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/new-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 3
+          }
+        },
+        {
+          "sku": "08001",
+          "price": "1234.56",
+          "description": "Industrial pump revised",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/new-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 4
+          }
+        },
+        {
+          "sku": "09999",
+          "price": "12.00",
+          "description": "New component",
+          "currency": "GBP",
+          "pack_quantity": "1",
+          "unit": "each",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "basis_evidence": "Explicit invented statement printed above the table",
+          "source": {
+            "file": "tests/fixtures/catalogue-benchmark/synthetic/new-catalogue.pdf",
+            "page": 1,
+            "table": 1,
+            "product_row": 5
+          }
+        }
+      ]
+    },
+    "reused_source": ".tools/gpu-smoke/fixtures.json and .tools/prepare-gpu-fixtures.py table layout; new explicit invented net/unit/pack=1 contract",
+    "expected_counts": {
+      "unchanged": 1,
+      "changed": 3,
+      "new": 1,
+      "absent": 1,
+      "needs_review": 0
+    },
+    "expected_outcomes": [
+      {
+        "sku": "00042",
+        "outcome": "changed",
+        "change_flags": [
+          "price_decrease"
+        ],
+        "old_cost": "5.25",
+        "new_cost": "4.20",
+        "cost_delta": "-1.05",
+        "cost_change_percent": "-20.000000",
+        "export": true
+      },
+      {
+        "sku": "00123",
+        "outcome": "changed",
+        "change_flags": [
+          "price_increase"
+        ],
+        "old_cost": "19.995",
+        "new_cost": "20.995",
+        "cost_delta": "1.000",
+        "cost_change_percent": "5.001250",
+        "export": true
+      },
+      {
+        "sku": "00756",
+        "outcome": "unchanged",
+        "change_flags": [],
+        "old_cost": "0.80",
+        "new_cost": "0.80",
+        "cost_delta": "0.00",
+        "cost_change_percent": "0.000000",
+        "export": false
+      },
+      {
+        "sku": "08001",
+        "outcome": "changed",
+        "change_flags": [
+          "description"
+        ],
+        "old_cost": "1234.56",
+        "new_cost": "1234.56",
+        "cost_delta": "0.00",
+        "cost_change_percent": "0.000000",
+        "export": true
+      },
+      {
+        "sku": "09000",
+        "outcome": "absent",
+        "export": false
+      },
+      {
+        "sku": "09999",
+        "outcome": "new",
+        "export": false
+      }
+    ],
+    "expected_export": {
+      "file": "tests/fixtures/catalogue-benchmark/synthetic/expected-changed-products.csv",
+      "row_count": 3,
+      "columns": [
+        "supplier_sku",
+        "description",
+        "currency",
+        "unit",
+        "pack_quantity",
+        "price_basis",
+        "tax_basis",
+        "old_cost",
+        "new_cost",
+        "cost_delta",
+        "cost_change_percent",
+        "percentage_state",
+        "change_flags"
+      ],
+      "rows": [
+        {
+          "supplier_sku": "00042",
+          "description": "Valve assembly 38",
+          "currency": "GBP",
+          "unit": "each",
+          "pack_quantity": "1",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "old_cost": "5.25",
+          "new_cost": "4.20",
+          "cost_delta": "-1.05",
+          "cost_change_percent": "-20.000000",
+          "percentage_state": "defined",
+          "change_flags": "price_decrease"
+        },
+        {
+          "supplier_sku": "00123",
+          "description": "Precision component 17",
+          "currency": "GBP",
+          "unit": "each",
+          "pack_quantity": "1",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "old_cost": "19.995",
+          "new_cost": "20.995",
+          "cost_delta": "1.000",
+          "cost_change_percent": "5.001250",
+          "percentage_state": "defined",
+          "change_flags": "price_increase"
+        },
+        {
+          "supplier_sku": "08001",
+          "description": "Industrial pump revised",
+          "currency": "GBP",
+          "unit": "each",
+          "pack_quantity": "1",
+          "price_basis": "unit",
+          "tax_basis": "net",
+          "old_cost": "1234.56",
+          "new_cost": "1234.56",
+          "cost_delta": "0.00",
+          "cost_change_percent": "0.000000",
+          "percentage_state": "defined",
+          "change_flags": "description"
+        }
+      ],
+      "order": "Compare by exact SKU; oracle sorted order is not an application ordering assertion"
+    }
+  }
+}

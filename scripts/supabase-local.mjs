@@ -7,6 +7,7 @@ const args = process.argv.slice(2)
 const allowed = [
   ['--help'], ['--version'], ['init'], ['start'], ['stop'],
   ['migration', '--help'], ['migration', 'new', '--help'],
+  ['migration', 'up', '--help'], ['migration', 'up', '--local'],
   ['db', 'reset', '--help'], ['db', 'lint', '--help'], ['test', 'db', '--help'],
   ['db', 'reset', '--local'], ['db', 'lint', '--local'], ['migration', 'list', '--local'],
   ['status', '--output', 'json'],
@@ -17,7 +18,7 @@ if (!newMigration && !allowed.some(entry => JSON.stringify(entry) === JSON.strin
   throw new Error('Only allowlisted local Supabase commands are permitted')
 }
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
-  !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_)/i.test(key)))
+  !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_SUPABASE_)/i.test(key)))
 const root = fileURLToPath(new URL('../', import.meta.url))
 if (existsSync(fileURLToPath(new URL('../supabase/.temp/project-ref', import.meta.url)))) {
   throw new Error('Refusing to use a checkout with a linked project reference')

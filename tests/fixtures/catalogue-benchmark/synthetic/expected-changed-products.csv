@@ -1,0 +1,4 @@
+supplier_sku,description,currency,unit,pack_quantity,price_basis,tax_basis,old_cost,new_cost,cost_delta,cost_change_percent,percentage_state,change_flags
+"00042","Valve assembly 38","GBP","each","1","unit","net","5.25","4.20","-1.05","-20.000000","defined","price_decrease"
+"00123","Precision component 17","GBP","each","1","unit","net","19.995","20.995","1.000","5.001250","defined","price_increase"
+"08001","Industrial pump revised","GBP","each","1","unit","net","1234.56","1234.56","0.00","0.000000","defined","description"

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import handler from "../api/pdf";
+process.env.STOCKSHIFT_PDF_INSPECTION_ENABLED = "1";
 
 async function request(method: string, body: unknown, authorization?: string) {
   const headers: Record<string, string | number | readonly string[]> = {};

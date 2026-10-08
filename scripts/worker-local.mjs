@@ -5,7 +5,9 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const env = Object.fromEntries(
   Object.entries(process.env).filter(
     ([key]) =>
-      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_)/i.test(key),
+      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_SUPABASE_)/i.test(
+        key,
+      ),
   ),
 );
 const state = JSON.parse(
@@ -29,6 +31,7 @@ const child = spawn(
     cwd: root,
     env: {
       ...env,
+      STOCKSHIFT_SUPABASE_MODE: "local",
       STOCKSHIFT_LOCAL_SUPABASE_URL: state.API_URL,
       STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY: state.SERVICE_ROLE_KEY,
     },

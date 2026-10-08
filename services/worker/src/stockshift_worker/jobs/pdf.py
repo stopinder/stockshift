@@ -9,16 +9,27 @@ import time
 from hashlib import sha256
 from queue import Empty, Queue
 from threading import Thread
+from uuid import UUID
 
 from stockshift_worker.extraction.base import ExtractionResult
 from stockshift_worker.extraction.digital_pdf import PdfError
 from stockshift_worker.extraction.paddleocr import OcrFailure
+from stockshift_worker.jobs.capabilities import (
+    hosted,
+    require_digital_configuration,
+    require_pdf_capability,
+)
 from stockshift_worker.jobs.gateway import LeaseLost
 
 
 def extract_job(gateway, job, lease, lost, *, timeout=60):
+    require_pdf_capability("extraction")
+    from stockshift_worker.jobs.capabilities import require_pdf_worker_agreement
+
+    require_pdf_worker_agreement(gateway)
     loaded = gateway.rpc("load_pdf_extraction", **lease)
     e, file = loaded["extraction"], loaded["file"]
+    require_digital_configuration(e["configuration"])
     if (
         e["id"] != job["extraction_run_id"]
         or e["tenant_id"] != job["tenant_id"]
@@ -29,10 +40,27 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
         or not 1 <= file["byte_count"] <= 10485760
     ):
         raise PdfError("PDF metadata outside job/source. Upload the source again.")
+    cfg = e["configuration"]
+    if hosted():
+        tenant, file_id = str(UUID(file["tenant_id"])), str(UUID(file["id"]))
+        inspections = gateway.request(
+            f"/rest/v1/pdf_inspections?tenant_id=eq.{tenant}&source_file_id=eq.{file_id}"
+            "&inspector_version=eq.cpu-inspection-v1&select=status,diagnostics"
+        )
+        pages = range(cfg["first_page"], cfg["last_page"] + 1)
+        if len(inspections) != 1 or inspections[0]["status"] != "inspected":
+            raise PdfError(
+                "CPU inspection required; scanned or unsupported documents require OCR, "
+                "which is disabled"
+            )
+        candidates = {
+            d["page"] for d in inspections[0]["diagnostics"] if d["state"] == "digital_candidate"
+        }
+        if not all(page in candidates for page in pages):
+            raise PdfError("Selected pages require OCR, which is disabled")
     data = gateway.download(file)
     if len(data) != file["byte_count"] or sha256(data).hexdigest() != file["sha256"]:
         raise PdfError("PDF integrity verification failed. Upload the source again.")
-    cfg = e["configuration"]
     obj = {"bucket": file["bucket_id"], "object_key": file["object_name"]}
     request = {
         "schema_version": "v1",
@@ -52,6 +80,8 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
         for k, v in os.environ.items()
         if k.upper() in {"SYSTEMROOT", "WINDIR", "PATH", "TEMP", "TMP"}
     }
+    if hosted():
+        env["STOCKSHIFT_CPU_PDF_ONLY"] = "1"
     if cfg.get("provider") == "auto":
         env.update(
             {
@@ -61,6 +91,7 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
                 in {
                     "STOCKSHIFT_OCR_ENDPOINT",
                     "STOCKSHIFT_OCR_TOKEN",
+                    "STOCKSHIFT_RUNTIME",
                     "STOCKSHIFT_OCR_MODEL",
                     "STOCKSHIFT_OCR_TIMEOUT",
                     "STOCKSHIFT_OCR_MAX_PAGES",
@@ -134,6 +165,8 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
                     p_total=progress["total"],
                 )
             elif "ocr_request" in output:
+                if hosted():
+                    raise PdfError("OCR is disabled for hosted CPU PDFs")
                 gateway.rpc(
                     "record_ocr_page",
                     **lease,
@@ -145,6 +178,8 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
                 child.stdin.write(b'{"ok":true}\n')
                 child.stdin.flush()
             elif "ocr_page" in output:
+                if hosted():
+                    raise PdfError("OCR is disabled for hosted CPU PDFs")
                 gateway.rpc(
                     "record_ocr_page",
                     **lease,
@@ -156,6 +191,8 @@ def extract_job(gateway, job, lease, lost, *, timeout=60):
                 child.stdin.write(b'{"ok":true}\n')
                 child.stdin.flush()
             elif "ocr_failure" in output:
+                if hosted():
+                    raise PdfError("OCR is disabled for hosted CPU PDFs")
                 gateway.rpc(
                     "record_ocr_page",
                     **lease,

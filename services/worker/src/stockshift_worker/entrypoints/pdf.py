@@ -2,10 +2,12 @@
 
 import base64
 import json
+import os
 import sys
 
 from stockshift_worker.extraction.base import ExtractionRequest
 from stockshift_worker.extraction.digital_pdf import DigitalPdfExtractor, PdfError, inspect_pdf
+from stockshift_worker.extraction.mapped_pdf import MappedPdfExtractor
 from stockshift_worker.extraction.paddleocr import OcrFailure, RoutedPdfExtractor
 
 
@@ -28,6 +30,11 @@ def main():
         data = base64.b64decode(value["data"], validate=True)
         if value.get("operation") == "extract":
             cfg = value["configuration"]
+            cpu_only = os.environ.get("STOCKSHIFT_CPU_PDF_ONLY") == "1"
+            if cpu_only and (
+                cfg.get("provider", "digital") != "digital" or cfg.get("layout_association")
+            ):
+                raise PdfError("CPU PDF extraction cannot invoke OCR")
 
             def event(v):
                 print(json.dumps(v), flush=True)
@@ -35,7 +42,11 @@ def main():
                     raise PdfError("OCR lease or usage authorization was rejected.")
 
             provider = (
-                RoutedPdfExtractor(data, cfg, cache=value.get("ocr_cache"), event=event)
+                DigitalPdfExtractor(data, cfg)
+                if cpu_only
+                else MappedPdfExtractor(data, cfg, cache=value.get("ocr_cache"), event=event)
+                if cfg.get("layout_association")
+                else RoutedPdfExtractor(data, cfg, cache=value.get("ocr_cache"), event=event)
                 if cfg.get("provider") == "auto"
                 else DigitalPdfExtractor(data, cfg)
             )

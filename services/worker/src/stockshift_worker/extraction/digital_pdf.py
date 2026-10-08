@@ -271,7 +271,8 @@ def normalize_pdf(revision, *, source_file_id, source_name):
     groups = {}
     for r in payload["records"]:
         loc = raw_evidence[r["raw_cells"][0]["evidence_id"]]["locator"]
-        if loc["table"] == str(table):
+        grid_table = r["semantic_candidates"].get("layout_grid_table", loc["table"])
+        if grid_table == str(table):
             groups.setdefault(loc["page"], []).append(r)
     if len(groups) != payload["completion"]["total_units"]:
         raise PdfError(
@@ -298,6 +299,21 @@ def normalize_pdf(revision, *, source_file_id, source_name):
         if not set(options.columns.values()) <= set(headers):
             raise PdfError("Mapped field is missing. Map SKU and price to exact detected headers.")
         for r in records[header:]:
+            candidates = r["semantic_candidates"]
+            if candidates.get("pricing_basis_unresolved") == "true":
+                if r["record_id"] not in verified_ocr:
+                    raise PdfError(
+                        "Verify each OCR product row against its source before comparison."
+                    )
+                raise PdfError(
+                    "Supplier pricing basis is unresolved; cost comparison/export is blocked."
+                )
+            if candidates.get("price_role") == "retail_guidance":
+                if r["record_id"] not in verified_ocr:
+                    raise PdfError(
+                        "Verify each OCR product row against its source before comparison."
+                    )
+                raise PdfError("Retail guidance cannot be mapped to wholesale cost.")
             cells = [c["value"] or "" for c in r["raw_cells"]]
             if repeat and cells == headers:
                 continue

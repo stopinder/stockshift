@@ -43,7 +43,7 @@ jobs:
           uv run --locked ruff check .
           uv run --locked ruff format --check .
           uv run --locked pytest
-          uv run --locked stockshift-worker
+          uv run --locked stockshift-worker --check
           uv run --locked python -c "from stockshift_worker.extraction.base import DocumentExtractor"
           uv build --no-sources
       - name: Validate installed wheel outside repository
@@ -62,7 +62,7 @@ jobs:
       - name: Build CPU worker image and check credential-free smoke command
         run: |
           docker build -t stockshift-worker:ci services/worker
-          docker run --rm --network none stockshift-worker:ci
+          docker run --rm --network none stockshift-worker:ci stockshift-worker --check
           services/worker/.venv/bin/python services/worker/tests/pdf_fixture.py | docker run --rm -i --network none --mount "type=bind,source=$PWD/services/worker/tests/pdf_package_smoke.py,target=/tmp/pdf_package_smoke.py,readonly" stockshift-worker:ci python -I /tmp/pdf_package_smoke.py
           services/worker/.venv/bin/python services/worker/tests/ocr_fixture.py | docker run --rm -i --network none --mount "type=bind,source=$PWD/services/worker/tests/ocr_package_smoke.py,target=/tmp/ocr_package_smoke.py,readonly" stockshift-worker:ci python -I /tmp/ocr_package_smoke.py
       - name: Check patch whitespace

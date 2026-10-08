@@ -11,7 +11,10 @@ export default defineConfig({
   reporter: "list",
   use: {
     channel: "chromium",
-    baseURL: "http://127.0.0.1:5173",
+    baseURL:
+      process.env.STOCKSHIFT_TEST_DAEMON === "1"
+        ? "http://127.0.0.1:5183"
+        : "http://127.0.0.1:5173",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -23,7 +26,10 @@ export default defineConfig({
   webServer: {
     command: "node scripts/web-local.mjs",
     cwd: "../..",
-    url: "http://127.0.0.1:5173",
-    reuseExistingServer: true,
+    url:
+      process.env.STOCKSHIFT_TEST_DAEMON === "1"
+        ? "http://127.0.0.1:5183"
+        : "http://127.0.0.1:5173",
+    reuseExistingServer: process.env.STOCKSHIFT_TEST_DAEMON !== "1",
   },
 });

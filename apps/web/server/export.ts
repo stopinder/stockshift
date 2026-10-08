@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { localConfigFromEnv } from "./supabase-upload-gateway.ts";
+import { serverConfigFromEnv } from "./supabase-upload-gateway.ts";
 import { UploadError } from "./uploads.ts";
 
 export const EXPORT_COLUMNS = [
@@ -65,7 +65,7 @@ export default async function exportHandler(
       run = url.searchParams.get("run");
     if (!tenant || !run || !uuid.test(tenant) || !uuid.test(run))
       throw new UploadError(400, "Invalid export selection");
-    const config = localConfigFromEnv();
+    const config = serverConfigFromEnv();
     // User JWT applies to export. No privileged client reads comparison results.
     const client = createClient(config.url, config.publishableKey, {
       auth: { persistSession: false, autoRefreshToken: false },

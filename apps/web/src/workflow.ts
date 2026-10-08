@@ -1,38 +1,54 @@
 import { createClient } from "@supabase/supabase-js";
+import { browserConfigFromEnv } from "./supabase-config";
+import { hostedPdfCapabilities } from "./pdf-capabilities";
+export { validateBrowserConfig } from "./supabase-config";
 
-export function validateBrowserConfig(url: string, key: string) {
-  const parsed = new URL(url);
-  if (
-    parsed.protocol !== "http:" ||
-    !["localhost", "127.0.0.1"].includes(parsed.hostname) ||
-    parsed.port !== "54321" ||
-    parsed.pathname !== "/" ||
-    parsed.username ||
-    parsed.password ||
-    parsed.search ||
-    parsed.hash ||
-    !key
-  )
-    throw new Error("Local Supabase configuration required");
-  if (key.startsWith("sb_secret_"))
-    throw new Error("Browser requires a publishable key");
-  if (key.split(".").length === 3) {
-    const payload = JSON.parse(
-      atob(key.split(".")[1]!.replaceAll("-", "+").replaceAll("_", "/")),
-    );
-    if (payload.role !== "anon")
-      throw new Error("Browser requires an anonymous public key");
-  } else if (!key.startsWith("sb_publishable_"))
-    throw new Error("Browser requires a publishable key");
-  return { url, key };
-}
 export function browserClient() {
-  const config = validateBrowserConfig(
-    import.meta.env.VITE_STOCKSHIFT_LOCAL_SUPABASE_URL ?? "",
-    import.meta.env.VITE_STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY ?? "",
-  );
+  // Reference only the allowlisted public values, never the whole Vite env object.
+  const config = browserConfigFromEnv({
+    VITE_STOCKSHIFT_SUPABASE_MODE: import.meta.env
+      .VITE_STOCKSHIFT_SUPABASE_MODE,
+    VITE_STOCKSHIFT_HOSTED_PDF_INSPECTION_ENABLED: import.meta.env
+      .VITE_STOCKSHIFT_HOSTED_PDF_INSPECTION_ENABLED,
+    VITE_STOCKSHIFT_HOSTED_PDF_EXTRACTION_ENABLED: import.meta.env
+      .VITE_STOCKSHIFT_HOSTED_PDF_EXTRACTION_ENABLED,
+    VITE_STOCKSHIFT_CSV_ONLY: import.meta.env.VITE_STOCKSHIFT_CSV_ONLY,
+    VITE_STOCKSHIFT_SUPABASE_URL: import.meta.env.VITE_STOCKSHIFT_SUPABASE_URL,
+    VITE_STOCKSHIFT_SUPABASE_PUBLISHABLE_KEY: import.meta.env
+      .VITE_STOCKSHIFT_SUPABASE_PUBLISHABLE_KEY,
+    VITE_STOCKSHIFT_LOCAL_SUPABASE_URL: import.meta.env
+      .VITE_STOCKSHIFT_LOCAL_SUPABASE_URL,
+    VITE_STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY: import.meta.env
+      .VITE_STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY,
+  });
   return createClient(config.url, config.key);
 }
+const hostedBrowser =
+  import.meta.env?.VITE_STOCKSHIFT_SUPABASE_MODE === "hosted";
+const hostedPdf = hostedPdfCapabilities(
+  {
+    VITE_STOCKSHIFT_HOSTED_PDF_INSPECTION_ENABLED: import.meta.env
+      ?.VITE_STOCKSHIFT_HOSTED_PDF_INSPECTION_ENABLED,
+    VITE_STOCKSHIFT_HOSTED_PDF_EXTRACTION_ENABLED: import.meta.env
+      ?.VITE_STOCKSHIFT_HOSTED_PDF_EXTRACTION_ENABLED,
+    VITE_STOCKSHIFT_CSV_ONLY: import.meta.env?.VITE_STOCKSHIFT_CSV_ONLY,
+  },
+  "VITE_",
+);
+export const csvOnly =
+  import.meta.env?.VITE_STOCKSHIFT_CSV_ONLY === "1" ||
+  (hostedBrowser && !hostedPdf.inspection);
+export const digitalPdfEnabled = !hostedBrowser || hostedPdf.extraction;
+export const uploadAccept = csvOnly
+  ? ".csv,text/csv"
+  : hostedBrowser
+    ? ".csv,text/csv,.pdf,application/pdf"
+    : ".pdf,application/pdf,.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+export const uploadFormatLabel = csvOnly
+  ? "CSV preview"
+  : hostedBrowser
+    ? "CSV or digital PDF"
+    : "CSV, XLSX or PDF";
 export type Client = ReturnType<typeof browserClient>;
 export type Product = Record<string, string | null> & {
   supplier_sku: string | null;
@@ -179,6 +195,8 @@ export function csvOptions(s: CsvSettings, mappedFields: string[] = []) {
   };
 }
 export function importOptions(s: CsvSettings, filename: string) {
+  if (/\.pdf$/i.test(filename) && !digitalPdfEnabled)
+    throw new Error("Digital PDF comparison is disabled.");
   if (/\.pdf$/i.test(filename)) {
     if (
       !s.pdfRevisionId ||
@@ -283,11 +301,28 @@ export async function uploadCsv(
       "Upload failed. Check your connection and retry this file.",
     );
   progress("Verifying file…");
-  await api(client, "/api/uploads", {
-    action: "finalize",
-    tenantId,
-    fileId: intent.fileId,
-  });
-  progress("Ready");
+  try {
+    await api(client, "/api/uploads", {
+      action: "finalize",
+      tenantId,
+      fileId: intent.fileId,
+    });
+  } catch (failure) {
+    // Preserve the ready upload when enqueue or its response was interrupted.
+    // The attached PDF settings offer an explicit idempotent enqueue retry.
+    if (!/\.pdf$/i.test(file.name)) throw failure;
+    const source = await client
+      .from("source_files")
+      .select("status")
+      .eq("tenant_id", tenantId)
+      .eq("id", intent.fileId)
+      .maybeSingle();
+    if (source.error || source.data?.status !== "ready") throw failure;
+    progress("Bytes verified · check inspection status");
+    return intent.fileId as string;
+  }
+  progress(
+    /\.pdf$/i.test(file.name) ? "Bytes verified · inspection pending" : "Ready",
+  );
   return intent.fileId as string;
 }

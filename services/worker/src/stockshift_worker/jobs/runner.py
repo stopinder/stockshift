@@ -10,8 +10,14 @@ from stockshift_worker.domain.csv_engine import CsvOptions, parse_csv, reconcile
 from stockshift_worker.domain.xlsx import MIME, WorkbookError, parse_xlsx
 from stockshift_worker.extraction.digital_pdf import PdfError, normalize_pdf
 from stockshift_worker.extraction.paddleocr import OcrFailure
-from stockshift_worker.jobs.gateway import LeaseLost, TransportError
+from stockshift_worker.jobs.capabilities import advertise_pdf_worker, hosted, require_pdf_capability
+from stockshift_worker.jobs.gateway import LeaseLost, TransportError, csv_only
+from stockshift_worker.jobs.inspection import inspect_job
 from stockshift_worker.jobs.pdf import extract_job
+
+
+class PreviewFormatError(ValueError):
+    """Hosted preview permits only CSV, without invoking other extractors."""
 
 
 def result_payload(run_id, old, new):
@@ -50,6 +56,13 @@ def result_payload(run_id, old, new):
 
 
 def verified_catalogue(gateway, file, tenant, options, revision=None):
+    if hosted() and file.get("verified_mime") not in ("text/csv", "application/pdf"):
+        raise PreviewFormatError("Hosted XLSX processing is unavailable")
+    if file.get("verified_mime") == "application/pdf":
+        require_pdf_capability("extraction")
+        from stockshift_worker.jobs.capabilities import require_pdf_worker_agreement
+
+        require_pdf_worker_agreement(gateway)
     if (
         file["tenant_id"] != tenant
         or file["status"] != "ready"
@@ -61,6 +74,11 @@ def verified_catalogue(gateway, file, tenant, options, revision=None):
     if len(data) != file["byte_count"] or sha256(data).hexdigest() != file["sha256"]:
         raise ValueError("Registered file integrity verification failed")
     if file["verified_mime"] == "application/pdf":
+        if hosted() and (
+            not revision
+            or revision.get("extraction", {}).get("provider", {}).get("provider") != "pdfplumber"
+        ):
+            raise PdfError("Hosted PDF comparison requires a direct digital extraction revision")
         if (
             options.get("format") != "pdf"
             or not revision
@@ -94,6 +112,7 @@ def heartbeat(gateway, lease, interval=30):
         while not stop.wait(interval):
             try:
                 gateway.rpc("heartbeat_csv_job", **lease)
+                advertise_pdf_worker(gateway, lease["p_worker"])
             except Exception:
                 # Fail closed: a network error also makes lease ownership uncertain.
                 lost.set()
@@ -109,6 +128,7 @@ def heartbeat(gateway, lease, interval=30):
 
 
 def run_once(gateway, worker_id):
+    advertise_pdf_worker(gateway, worker_id)
     job = gateway.rpc("claim_csv_job", p_worker=worker_id)
     if job is None:
         return False
@@ -121,7 +141,17 @@ def run_once(gateway, worker_id):
     stage = "load"
     try:
         with heartbeat(gateway, lease) as lost:
+            if job.get("kind") == "inspect_pdf":
+                require_pdf_capability("inspection")
+                stage = "inspect"
+                inspect_job(gateway, job, lease, lost)
+                return True
+            if job.get("kind") not in ("reconcile_csv", "extract_pdf"):
+                raise ValueError("Unknown worker job kind")
+            if csv_only() and job.get("kind") == "extract_pdf":
+                raise PreviewFormatError("This preview supports CSV only; PDF/OCR are unavailable.")
             if job.get("kind") == "extract_pdf":
+                require_pdf_capability("extraction")
                 stage = "extract"
                 extract_job(gateway, job, lease, lost)
                 return True
@@ -129,6 +159,12 @@ def run_once(gateway, worker_id):
             run = context["run"]
             if run["tenant_id"] != job["tenant_id"] or run["id"] != job["comparison_run_id"]:
                 raise ValueError("Run outside job tenant")
+            if csv_only() and any(
+                context[side]["verified_mime"] != "text/csv" for side in ("current", "incoming")
+            ):
+                raise PreviewFormatError(
+                    "This preview supports CSV only; XLSX/PDF are unavailable."
+                )
             stage = "parse"
             old = verified_catalogue(
                 gateway,
@@ -166,12 +202,16 @@ def run_once(gateway, worker_id):
             else not isinstance(exc, (ValueError, TypeError, LookupError, csv.Error))
         )
         failure = {
-            "code": exc.code
+            "code": "preview_format_unavailable"
+            if isinstance(exc, PreviewFormatError)
+            else exc.code
             if isinstance(exc, OcrFailure)
             else "pdf_timeout"
             if isinstance(exc, TimeoutError)
             else "invalid_pdf_job"
-            if isinstance(exc, PdfError) or job.get("kind") == "extract_pdf" and not retryable
+            if isinstance(exc, PdfError)
+            or job.get("kind") in ("extract_pdf", "inspect_pdf")
+            and not retryable
             else "transport_unavailable"
             if retryable
             else "invalid_xlsx_job"
@@ -179,13 +219,13 @@ def run_once(gateway, worker_id):
             else "invalid_csv_job",
             "stage": stage,
             "message": str(exc)
-            if isinstance(exc, (PdfError, TimeoutError))
-            else "Local transport unavailable"
+            if isinstance(exc, (PdfError, TimeoutError, PreviewFormatError))
+            else "Supabase transport unavailable"
             if retryable
             else str(exc)
             if isinstance(exc, WorkbookError)
             else "PDF settings or extraction validation failed. Export a supported PDF or CSV/XLSX."
-            if job.get("kind") == "extract_pdf"
+            if job.get("kind") in ("extract_pdf", "inspect_pdf")
             else "CSV settings, input integrity or result validation failed",
             "retryable": retryable,
         }

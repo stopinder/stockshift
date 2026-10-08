@@ -4,7 +4,7 @@ FROM python:3.11.14-slim-bookworm
 COPY --from=uv /uv /usr/local/bin/uv
 
 WORKDIR /app
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 STOCKSHIFT_RUNTIME=production STOCKSHIFT_SUPABASE_MODE=hosted
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project --python /usr/local/bin/python
 COPY src ./src

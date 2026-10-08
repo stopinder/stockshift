@@ -96,10 +96,10 @@ before(async () => {
 })
 after(async () => { await db.exec('rollback'); await db.close() })
 
-check('migrations create exactly fifteen RLS-protected public tables', async () => {
+check('migrations create exactly sixteen RLS-protected public tables', async () => {
   const tables = await rows(`select relname, relrowsecurity from pg_class c join pg_namespace n
     on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' order by relname`)
-  assert.equal(tables.length, 15)
+  assert.equal(tables.length, 16)
   assert.ok(tables.every(table => table.relrowsecurity))
 })
 for (const table of ['tenants', 'tenant_memberships', 'suppliers', 'source_files',
@@ -228,12 +228,12 @@ check('service transition rechecks actual membership, tenant and actor ownership
 check('server finalization verifies state, bytes and hash and supports ready retries', async () => {
   await as(null,'service_role')
   await denied("select public.transition_catalogue_upload($1,$2,$3,'finish',10,'text/csv',$4)",
-    [A,pending,editor,'a'.repeat(64)], '23514')
-  await db.query("select public.transition_catalogue_upload($1,$2,$3,'begin')", [A,pending,editor])
-  await denied("select public.transition_catalogue_upload($1,$2,$3,'finish',9,'text/csv',$4)",
-    [A,pending,editor,'a'.repeat(64)], '23514')
-  const ready = (await rows("select public.transition_catalogue_upload($1,$2,$3,'finish',10,'text/csv',$4) as f",
-    [A,pending,editor,'a'.repeat(64)]))[0].f
+    [A,pending,editor,'a'.repeat(64)], '42501')
+  const lease = (await rows("select public.transition_catalogue_upload($1,$2,$3,'begin') as f", [A,pending,editor]))[0].f.verification_lease
+  await denied("select public.transition_catalogue_upload($1,$2,$3,'finish',9,'text/csv',$4,$5::uuid)",
+    [A,pending,editor,'a'.repeat(64),lease], '23514')
+  const ready = (await rows("select public.transition_catalogue_upload($1,$2,$3,'finish',10,'text/csv',$4,$5::uuid) as f",
+    [A,pending,editor,'a'.repeat(64),lease]))[0].f
   assert.equal(ready.status,'ready')
   assert.equal(ready.sha256,'a'.repeat(64))
   const retry = (await rows("select public.transition_catalogue_upload($1,$2,$3,'begin') as f", [A,pending,editor]))[0].f
@@ -282,16 +282,16 @@ check('wrong Storage size or owner rejects finalization', async () => {
 })
 check('finalization requires valid SHA and supported MIME', async () => {
   await as(null,'service_role')
-  await db.query("select public.transition_catalogue_upload($1,$2,$3,'begin')", [A,pending,editor])
-  await denied("select public.transition_catalogue_upload($1,$2,$3,'finish',10,'application/pdf',$4)",
-    [A,pending,editor,'a'.repeat(64)], '23514')
-  await denied("select public.transition_catalogue_upload($1,$2,$3,'finish',10,'text/csv',$4)",
-    [A,pending,editor,'a'.repeat(64)+'\n'], '23514')
+  const lease = (await rows("select public.transition_catalogue_upload($1,$2,$3,'begin') as f", [A,pending,editor]))[0].f.verification_lease
+  await denied("select public.transition_catalogue_upload($1,$2,$3,'finish',10,'application/pdf',$4,$5::uuid)",
+    [A,pending,editor,'a'.repeat(64),lease], '23514')
+  await denied("select public.transition_catalogue_upload($1,$2,$3,'finish',10,'text/csv',$4,$5::uuid)",
+    [A,pending,editor,'a'.repeat(64)+'\n',lease], '23514')
 })
 check('verified files can attach and failed files cannot', async () => {
   await as(null,'service_role')
-  await db.query("select public.transition_catalogue_upload($1,$2,$3,'begin')", [A,pending,editor])
-  await db.query("select public.transition_catalogue_upload($1,$2,$3,'fail')", [A,pending,editor])
+  const lease = (await rows("select public.transition_catalogue_upload($1,$2,$3,'begin') as f", [A,pending,editor]))[0].f.verification_lease
+  await db.query("select public.transition_catalogue_upload($1,$2,$3,'fail',null,null,null,$4::uuid)", [A,pending,editor,lease])
   await as(editor)
   await denied('insert into public.comparison_files(tenant_id,comparison_id,source_file_id,side) values ($1,$2,$3,$4)',
     [A,comparisonA,pending,'incoming'], '23514')

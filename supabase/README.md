@@ -1,5 +1,18 @@
 # Local Supabase foundation
 
+## Hosted CPU PDF code (Chunk 9; defaults off)
+
+Hosted PDF support is implemented behind separate default-off inspection and
+direct digital-extraction capabilities. This does not enable any hosted service.
+The API requires a fresh matching advertisement from the existing CPU worker;
+disabled/mixed worker profiles fail closed. All upgraded hosted workers advertise
+their profile, including CSV-only workers. Apply the reviewed capability registry
+migration before upgrading that worker, even when PDF flags remain off.
+
+See [Chunk 9 configuration and local evidence](../docs/CHUNK_9_HOSTED_CPU_PDF_CODE.md)
+for flag combinations, migration/worker rollout prerequisites and checks performed
+with hosted-mode transports confined to native loopback. OCR remains disabled.
+
 This checkout is **local only**. Do not link, push migrations, create a hosted
 project, or use an existing access token, project ref, database password,
 service-role key or remote connection string. No hosted project was accessed.
@@ -42,7 +55,10 @@ verify the full Supabase Docker stack, Auth issuance, Storage HTTP/blob behavior
 or Supabase's own schema migrations. The fixtures are test-only, never production
 migrations.
 
-`npm run test:local` requires the running, freshly reset Docker-backed local stack.
+`npm run test:local` requires the running Docker-backed local stack with all local
+migrations applied. Preserve an existing populated database: inspect its data and
+migration history, then use `npm run supabase:local -- migration up --local` to
+apply only pending migrations. Do not reset an existing database as a test prerequisite.
 It runs the same 32 SQL security tests against PostgreSQL on `127.0.0.1:54322`,
 without the embedded Auth/Storage bootstrap or reapplying application migrations.
 Foundation SQL fixtures and per-case mutations are rolled back; job/HTTP fixtures
@@ -142,7 +158,7 @@ expiry follows the pinned Storage SDK/API, rather than a claimed custom expiry.
 Finalize body: `{ "action": "finalize", "tenantId": "<uuid>", "fileId": "<uuid>" }`.
 The privileged transition rechecks tenant, registered creator, live editor role,
 exact object, Storage owner and server-stored size. It locks the file and moves
-pending → verifying. Server downloads only that registered path, checks actual
+pending → verifying with a private 120-second attempt lease. Server downloads only that registered path, checks actual
 size, verifies supported UTF-8 CSV text and hashes the original bytes with SHA-256.
 Only a valid server finish transaction marks ready and stores MIME/bytes/hash/time.
 Ready retries are idempotent; pending/verifying/failed files cannot attach to a
@@ -157,11 +173,22 @@ header mappings, locale/encoding support and record validation in the next workf
 Client content-type/size/hash claims never establish readiness.
 
 Full blobs are verified in memory (10 MiB cap). No resumable uploads, signed URL
-refresh flow, quota accounting, extraction, cleanup or background recovery exists.
-A signing failure leaves an inert pending row. Verification failures become failed
-and require a new intent. A crash after reserving verification leaves a non-ready
-verifying row for an administrator to inspect; there is no fabricated recovery
-worker. Administrators holding database-superuser/blob-storage credentials remain
+refresh flow, quota accounting, cleanup or automatic upload-recovery worker exists.
+A signing failure leaves an inert pending row. Invalid bytes become failed and
+require a new intent. Transient verification errors release the current lease;
+an interrupted process leaves a lease that expires after 120 seconds. The creator
+with a current owner/editor membership can retry the same finalize request without
+re-uploading. An active attempt returns HTTP 409; an expired attempt can be reclaimed.
+Legacy verifying rows without leases can also be reclaimed. Five claims are allowed;
+the next retry after expiry marks the source failed and requires a new upload.
+Every attempt downloads and hashes the original bytes again. Claim and finish check
+registered Storage ownership/size, and completion requires the current live token.
+Stale finish/fail/release requests cannot change a newer attempt or a ready source.
+Ready retries still recover PDF inspection enqueue gaps without extracting products.
+The service-only eight-argument transition RPC includes `p_lease`; the legacy
+seven-argument RPC supports begin/ready replay but rejects unfenced finish/fail.
+See [Chunk 8 verification](../docs/CHUNK_8_UPLOAD_VERIFICATION_RECOVERY.md).
+Administrators holding database-superuser/blob-storage credentials remain
 trusted; application policies cannot constrain someone who disables those controls.
 
 Official references used: [RLS and grants](https://supabase.com/docs/guides/database/postgres/row-level-security),
@@ -196,5 +223,21 @@ revision references include both tenant and source in foreign keys.
 
 `npm run test:local` now includes native PDF security/lease/revision checks and real
 Auth/private Storage/Python PDF extraction/correction/comparison/export integration.
-Keep using the guarded local commands, reset migrations from scratch, and never
-link or push migrations to a hosted Supabase project for this workflow.
+Keep using the guarded local commands and apply pending migrations with
+`migration up --local` on an existing populated instance. Never link or push
+migrations to a hosted Supabase project for this workflow.
+
+## Local PDF inspection API
+
+PDF upload finalization and persisted inspection reads require the server-only
+`STOCKSHIFT_PDF_INSPECTION_ENABLED=1` opt-in. The default is off; hosted/Vercel
+PDF uploads remain rejected. Native tests enable the capability only in their
+local test process.
+
+Finalization verifies bytes and idempotently enqueues the CPU inspection job.
+If enqueue fails after byte readiness, retry finalization to recover without
+re-uploading. `POST /api/pdf` reads authorized persisted inspection status/results;
+it does not execute Python or initiate extraction, comparison or OCR. Byte
+verification, inspection success and confirmed extraction remain separate gates.
+See [the Chunk 5 report](../docs/CHUNK_5_PDF_UPLOAD_API_INSPECTION.md) for the response
+contract, native checks and remaining UI integration work.

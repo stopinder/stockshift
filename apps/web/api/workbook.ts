@@ -1,8 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { localConfigFromEnv } from "../server/supabase-upload-gateway.ts";
-import { BUCKET, UploadError } from "../server/uploads.ts";
+import { serverConfigFromEnv } from "../server/supabase-upload-gateway.ts";
+import {
+  BUCKET,
+  UploadError,
+  requireSupportedUpload,
+} from "../server/uploads.ts";
 import { inspectWorkbook, XLSX_MIME } from "../server/workbook.ts";
 
 export default async function handler(
@@ -12,6 +16,7 @@ export default async function handler(
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Type", "application/json");
   try {
+    requireSupportedUpload("inspection.xlsx");
     if (req.method !== "POST") {
       res.setHeader("Allow", "POST");
       throw new UploadError(405, "Use POST.");
@@ -49,7 +54,7 @@ export default async function handler(
         400,
         "Choose a valid workbook, worksheet and header row (1–200).",
       );
-    const config = localConfigFromEnv();
+    const config = serverConfigFromEnv();
     const client = createClient(config.url, config.publishableKey, {
       auth: { persistSession: false },
       global: { headers: { Authorization: authorization } },

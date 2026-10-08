@@ -1,2 +1,7 @@
 * text=auto eol=lf
 *.png binary
+# Preserve PDF fixture bytes and treat them as binary review artifacts.
+*.pdf binary
+# Preserve already-verified dependency migration bytes, including their final blank line.
+supabase/migrations/20261006194510_catalogue_layout_review.sql whitespace=-blank-at-eof
+supabase/migrations/20261006203229_catalogue_pricing_basis_review.sql whitespace=-blank-at-eof

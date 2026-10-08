@@ -35,6 +35,7 @@ class Gateway:
         self.error = None
         tenant, run = str(uuid4()), str(uuid4())
         self.job = {
+            "kind": "reconcile_csv",
             "id": str(uuid4()),
             "tenant_id": tenant,
             "comparison_run_id": run,

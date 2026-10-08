@@ -5,7 +5,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const env = Object.fromEntries(
   Object.entries(process.env).filter(
     ([key]) =>
-      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|VITE_)/i.test(
+      !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_SUPABASE_|VITE_)/i.test(
         key,
       ),
   ),
@@ -24,9 +24,12 @@ if (
 )
   throw new Error("Start local Supabase first");
 Object.assign(env, {
+  STOCKSHIFT_SUPABASE_MODE: "local",
   STOCKSHIFT_LOCAL_SUPABASE_URL: state.API_URL,
   STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY: state.ANON_KEY,
   STOCKSHIFT_LOCAL_SUPABASE_SECRET_KEY: state.SERVICE_ROLE_KEY,
+  VITE_STOCKSHIFT_SUPABASE_MODE: "local",
+  VITE_STOCKSHIFT_CSV_ONLY: env.STOCKSHIFT_CSV_ONLY ?? "0",
   VITE_STOCKSHIFT_LOCAL_SUPABASE_URL: state.API_URL,
   VITE_STOCKSHIFT_LOCAL_SUPABASE_PUBLISHABLE_KEY: state.ANON_KEY,
 });

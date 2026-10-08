@@ -1,15 +1,55 @@
 # Local CSV engine
 
+Production packaging excludes local diagnostic/replay entrypoints and fixtures.
+Hosted CPU PDF processing rejects OCR independently; OCR stays disabled.
+The default `stockshift-worker` command is a daemon. The CPU image defaults to
+explicit hosted mode and permits CSV only. Configure `STOCKSHIFT_SUPABASE_MODE=hosted`,
+`STOCKSHIFT_SUPABASE_URL=https://<preview-ref>.supabase.co` and the server-only
+`STOCKSHIFT_SUPABASE_SECRET_KEY` in the worker host's secret settings. Never set
+OCR credentials for this CSV preview. Vercel does not automatically run this worker. See
+[preview readiness](../../docs/CHUNK_10_PREVIEW_RELEASE.md).
+
 Scanned/mixed PDF extraction uses `RoutedPdfExtractor` and the worker-only
 PaddleOCR-VL `/layout-parsing` adapter. It renders only pages that need OCR, caches
 immutable page responses, and requires source verification through the existing
 correction model. See [OCR configuration and local testing](../../docs/PADDLEOCR_WORKFLOW.md).
 The CPU image contains the adapter and PDF renderer, not GPU model weights.
 
+The existing layout adapter is retained as a PDF import dependency; hosted CPU
+processing rejects layout routing and uses direct digital extraction only.
+
 `stockshift_worker.domain.csv_engine` provides `CsvOptions`, `parse_csv`,
 `reconcile`, and `export_changed`. No cloud credentials or new dependencies are
-needed. The worker CLI processes durable local jobs when invoked with `--once`
-or `--poll`; its default command remains a credential-free smoke check.
+needed. The default CLI polls durable jobs every two seconds; `--poll` remains an alias,
+`--once` processes at most one eligible job, and `--check` validates installed runtime
+imports without credentials/network. `npm run worker:local` explicitly uses only
+local stack credentials. Hosted mode never falls back to local keys or standard
+SUPABASE_* variables. Opaque secret keys use `apikey`; legacy service_role JWTs
+also use Bearer authorization.
+
+SIGTERM/SIGINT stops further claims, interrupts idle waits and drains the current
+job while its heartbeat remains active. Transient claim failures back off at the
+poll interval. PostgreSQL retains fenced leases, bounded attempts, scheduled
+retries, atomic/idempotent results and dead-letter handling. A host that kills a
+job before drain completes leaves it recoverable after the 120-second lease.
+No queue state is held only in worker memory. No HTTP listener, disk or Redis is
+required. The service manager must restart a crashed process.
+
+Default hosted mode refuses PDF/OCR extraction; approved CPU PDF flags permit
+only direct digital extraction. Hosted XLSX remains unavailable.
+Use an isolated preview database, not a mixed production queue.
+
+## CSV preview verification
+
+Build: `docker build -t stockshift-worker:csv-preview services/worker` from the
+repository root. Import smoke: `docker run --rm --network none
+stockshift-worker:csv-preview stockshift-worker --check`.
+
+On Docker Desktop with host networking enabled, the browser suite can run the
+actual image's default daemon against local Supabase; test credentials are passed
+through process environment, not Docker command arguments. Test teardown sends
+SIGTERM and asserts a clean drain/exit. See exact PowerShell commands and hosted
+resource blockers in [preview readiness](../../docs/CHUNK_10_PREVIEW_RELEASE.md).
 
 From `services/worker`, run the following with `uv run --locked python`:
 
@@ -139,7 +179,7 @@ uv run --locked stockshift-worker --once
 uv run --locked stockshift-worker --poll --poll-interval 2
 ```
 
-The default command without those flags remains a no-network smoke check. A local
+The default command polls; use `--check` for a no-network import smoke. A local
 owner/editor enqueues via `enqueue_comparison_job(p_tenant,p_comparison,p_key,
 p_current_options,p_incoming_options,p_max_attempts)` using their authenticated
 token. Both options objects use the explicit `CsvOptions` fields shown above.
@@ -245,3 +285,26 @@ See [digital PDF assumptions and correction steps](../../docs/LOCAL_CSV_WORKFLOW
 `reportlab==5.0.1` is development-only and generates synthetic test fixtures. The
 installed-wheel and CPU-container smoke tests parse these fixtures without any
 fixture writer installed in the runtime. No OCR model or hosted credentials are used.
+
+# Hosted CPU PDF capabilities (Chunk 9)
+
+The existing HTTPS hosted gateway and CPU worker now support inspection and direct
+digital extraction behind `STOCKSHIFT_HOSTED_PDF_INSPECTION_ENABLED` and
+`STOCKSHIFT_HOSTED_PDF_EXTRACTION_ENABLED`, both defaulting to `0`. Extraction
+requires inspection; `STOCKSHIFT_OCR_ENABLED` must remain `0`. Hosted XLSX and
+provider routing remain unavailable. Hosted OCR RPCs are rejected independently.
+
+Upgraded hosted workers advertise their actual profile to the private capability
+registry every 30 seconds, including during job heartbeats; advertisements expire
+after 120 seconds. The API rejects missing, expired or conflicting profiles.
+Workers also check matching live profiles before PDF execution/comparison.
+The new reviewed migration is required before worker rollout, including default-off
+CSV operation. Local gateway operation is unchanged and needs no advertisements.
+
+Hosted extraction checks persisted CPU inspection and every selected page before
+download/parser execution. Its isolated subprocess receives no OCR credentials and
+cannot select a routed/mapped provider. PDF comparison accepts only complete,
+confirmed direct-digital revisions. Queue tokens, integrity checks and atomic
+publication remain the existing mechanisms.
+
+See [Chunk 9 rollout configuration and evidence](../../docs/CHUNK_9_HOSTED_CPU_PDF_CODE.md).

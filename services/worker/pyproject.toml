@@ -29,6 +29,11 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/stockshift_worker"]
+exclude = [
+  "src/stockshift_worker/entrypoints/ocr_connection.py",
+  "src/stockshift_worker/entrypoints/ocr_catalogue_diagnostic.py",
+  "src/stockshift_worker/entrypoints/ocr_catalogue_replay.py",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
