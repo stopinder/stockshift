@@ -2,7 +2,13 @@
 import { onMounted, ref } from "vue";
 import { friendlyError } from "../workflow";
 import type { Client } from "../workflow";
-const props = defineProps<{ client: Client; tenantId: string }>();
+import { canStartDraft, type Allowance } from "../allowance";
+const props = defineProps<{
+  client: Client;
+  tenantId: string;
+  canCreate: boolean;
+  checkAllowance: () => Promise<Allowance | null>;
+}>();
 const emit = defineEmits<{ created: [id: string] }>();
 const suppliers = ref<{ id: string; name: string }[]>([]),
   supplier = ref(""),
@@ -23,6 +29,10 @@ async function create() {
   busy.value = true;
   error.value = "";
   try {
+    if (!canStartDraft(await props.checkAllowance()))
+      throw new Error(
+        "A new comparison needs a remaining comparison allowance and two upload reservations. Check the workspace allowance above.",
+      );
     let supplierId = supplier.value;
     if (supplierId === "new") {
       const saved = await props.client
@@ -89,7 +99,7 @@ async function create() {
     <p v-if="error" role="alert" class="alert">{{ error }}</p>
     <div class="form-actions">
       <a class="button" href="#/comparisons">Cancel</a
-      ><button class="primary" :disabled="busy">
+      ><button class="primary" :disabled="busy || !canCreate">
         {{ busy ? "Creating…" : "Continue to files" }}
       </button>
     </div>

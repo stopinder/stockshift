@@ -188,9 +188,35 @@
   display: flex;
   align-items: center;
   gap: 2.5rem;
+  flex-wrap: wrap;
   padding: 1rem max(24px, calc((100vw - 1320px) / 2));
   background: white;
   border-bottom: 1px solid var(--color-border);
+}
+.app-header nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.workspace-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.workspace-name {
+  max-width: 220px;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.test-workspace-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.test-workspace-choice input {
+  width: auto;
 }
 .brand {
   display: flex;
@@ -223,6 +249,7 @@ nav a[aria-current] {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  flex-wrap: wrap;
 }
 .header-account select {
   max-width: 220px;
@@ -1129,4 +1156,54 @@ pre {
   html {
     scroll-behavior: auto !important;
   }
+}
+
+.allowance-panel {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.allowance-panel p {
+  margin: 0.4rem 0;
+  overflow-wrap: anywhere;
+}
+.allowance-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.allowance-count strong {
+  color: #174c3c;
+  font-variant-numeric: tabular-nums;
+}
+.allowance-warning {
+  color: #936b27;
+  font-weight: 600;
+}
+.billing-panel {
+  padding: 24px;
+}
+.billing-panel > p {
+  margin: 16px 0;
+}
+.billing-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin: 24px 0;
+}
+.billing-summary dt {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+.billing-summary dd {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+.billing-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
 }

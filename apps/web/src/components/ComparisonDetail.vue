@@ -12,6 +12,7 @@ import {
   isNumericUnit,
 } from "../workflow";
 import type { Client, ResultRow } from "../workflow";
+import { canCompare, canUpload, type Allowance } from "../allowance";
 import CsvSettings from "./CsvSettings.vue";
 import PdfSettings from "./PdfSettings.vue";
 import XlsxSettings from "./XlsxSettings.vue";
@@ -20,6 +21,9 @@ const props = defineProps<{
   tenantId: string;
   comparisonId: string;
   canEdit: boolean;
+  allowance: Allowance | null;
+  allowanceLoading: boolean;
+  checkAllowance: () => Promise<Allowance | null>;
 }>();
 const loading = ref(true),
   error = ref(""),
@@ -226,6 +230,10 @@ async function upload(side: string, event: Event) {
   busy.value = true;
   error.value = "";
   try {
+    if (!canUpload(await props.checkAllowance(), file.size))
+      throw new Error(
+        "This file exceeds the remaining workspace allowance, or no comparison allowance remains. Check the allowance above.",
+      );
     const id = await uploadCsv(
       props.client,
       props.tenantId,
@@ -261,6 +269,7 @@ async function upload(side: string, event: Event) {
     error.value = friendlyError(e);
     uploadState.value[side] = "Failed — select the file to retry";
   } finally {
+    await props.checkAllowance();
     busy.value = false;
     input.value = "";
   }
@@ -290,6 +299,10 @@ async function enqueue() {
   busy.value = true;
   error.value = "";
   try {
+    if (!canCompare(await props.checkAllowance()))
+      throw new Error(
+        "No comparison allowance is available. Saved results remain accessible; check the allowance above.",
+      );
     const a = importOptions(
         currentSettings.value,
         files.value.current!.original_filename,
@@ -335,6 +348,7 @@ async function enqueue() {
   } catch (e) {
     error.value = friendlyError(e);
   } finally {
+    await props.checkAllowance();
     busy.value = false;
   }
 }
@@ -537,7 +551,9 @@ onUnmounted(() => {
                 ? '.csv,text/csv'
                 : '.pdf,application/pdf,.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             "
-            :disabled="busy || !!files[side]"
+            :disabled="
+              busy || allowanceLoading || !!files[side] || !canUpload(allowance)
+            "
             @change="upload(side, $event)"
           /><small role="status">{{
             files[side]
@@ -596,7 +612,13 @@ onUnmounted(() => {
         </p>
         <button
           class="primary"
-          :disabled="busy || !files.current || !files.incoming"
+          :disabled="
+            busy ||
+            allowanceLoading ||
+            !canCompare(allowance) ||
+            !files.current ||
+            !files.incoming
+          "
         >
           {{ busy ? "Working…" : "Start comparison" }}
         </button>
