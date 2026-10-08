@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import { Readable } from "node:stream";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import Stripe from "stripe";
-import { billingConfig, validatePrice } from "../server/billing.ts";
+import {
+  billingConfig,
+  validatePrice,
+  billingStatus,
+  applyStripeEvent,
+} from "../server/billing.ts";
 import handler from "../api/stripe-webhook.ts";
 import billingHandler from "../api/billing.ts";
 function response() {
@@ -113,4 +118,171 @@ test("billing endpoints require authentication and do not expose configuration",
   );
   assert.equal(r.read().status, 401);
   assert.equal(r.read().body, '{"error":"Authentication required."}');
+});
+
+test("preview checkout returns are explicitly trusted and never use live keys", () => {
+  const config = {
+    STOCKSHIFT_BILLING_ENABLED: "1",
+    STOCKSHIFT_STRIPE_MODE: "test",
+    STOCKSHIFT_STRIPE_SECRET_KEY: "sk_test_example",
+    STOCKSHIFT_STRIPE_PRICE_ID: "price_example",
+    VERCEL_ENV: "preview",
+    STOCKSHIFT_PUBLIC_ORIGIN:
+      "https://stockshift-git-codex-customer-allowance-stopinders-projects.vercel.app",
+  };
+  assert.equal(billingConfig(config).origin, config.STOCKSHIFT_PUBLIC_ORIGIN);
+  for (const origin of [
+    "https://stockshift.co",
+    "https://attacker.vercel.app",
+    config.STOCKSHIFT_PUBLIC_ORIGIN + "/",
+    "http://stockshift-git-codex-customer-allowance-stopinders-projects.vercel.app",
+  ])
+    assert.throws(() =>
+      billingConfig({ ...config, STOCKSHIFT_PUBLIC_ORIGIN: origin }),
+    );
+  assert.throws(
+    () =>
+      billingConfig({
+        ...config,
+        STOCKSHIFT_STRIPE_MODE: "live",
+        STOCKSHIFT_STRIPE_SECRET_KEY: "sk_live_example",
+      }),
+    /test mode/,
+  );
+  assert.throws(
+    () => billingConfig({ ...config, VERCEL_ENV: "production" }),
+    /return address/,
+  );
+});
+
+test("owner status exposes only the subscription summary and refuses a different billing mode", async () => {
+  const old = { ...process.env };
+  try {
+    Object.assign(process.env, {
+      STOCKSHIFT_BILLING_ENABLED: "1",
+      STOCKSHIFT_STRIPE_MODE: "test",
+      STOCKSHIFT_STRIPE_SECRET_KEY: "sk_test_example",
+      STOCKSHIFT_STRIPE_PRICE_ID: "price_example",
+      STOCKSHIFT_PUBLIC_ORIGIN: "https://stockshift.co",
+    });
+    let live = false;
+    const calls: string[] = [];
+    const ctx = {
+      tenant: "tenant-example",
+      admin: {
+        from(table: string) {
+          return {
+            select() {
+              return {
+                eq(column: string, tenant: string) {
+                  calls.push(`${table}:${column}:${tenant}`);
+                  return {
+                    async maybeSingle() {
+                      return {
+                        error: null,
+                        data:
+                          table === "billing_accounts"
+                            ? { tenant_id: tenant }
+                            : {
+                                status: "active",
+                                period_end: "2026-11-08T00:00:00Z",
+                                livemode: live,
+                              },
+                      };
+                    },
+                  };
+                },
+              };
+            },
+          };
+        },
+      },
+    } as unknown as Parameters<typeof billingStatus>[0];
+    const result = await billingStatus(ctx);
+    assert.deepEqual(result, {
+      enabled: true,
+      mode: "test",
+      hasAccount: true,
+      subscription: { status: "active", periodEnd: "2026-11-08T00:00:00Z" },
+    });
+    assert.equal(calls.length, 2);
+    assert.ok(
+      calls.every((call) => call.endsWith(":tenant_id:tenant-example")),
+    );
+    live = true;
+    await assert.rejects(() => billingStatus(ctx), /separate workspace/);
+    process.env.STOCKSHIFT_BILLING_ENABLED = "0";
+    calls.length = 0;
+    assert.equal((await billingStatus(ctx)).enabled, false);
+    assert.equal(calls.length, 0);
+  } finally {
+    for (const key of Object.keys(process.env))
+      if (!(key in old)) delete process.env[key];
+    Object.assign(process.env, old);
+  }
+});
+
+test("webhook synchronization uses current Stripe state instead of stale event data", async () => {
+  let recorded: Record<string, unknown> | undefined;
+  const admin = {
+    from() {
+      return {
+        select() {
+          return {
+            eq() {
+              return {
+                async maybeSingle() {
+                  return { error: null, data: { tenant_id: "tenant-example" } };
+                },
+              };
+            },
+          };
+        },
+      };
+    },
+    async rpc(name: string, params: Record<string, unknown>) {
+      assert.equal(name, "record_stockshift_subscription_v2");
+      recorded = params;
+      return { error: null };
+    },
+  } as unknown as Parameters<typeof applyStripeEvent>[3];
+  const stripe = {
+    subscriptions: {
+      async list() {
+        return {
+          has_more: false,
+          data: [
+            {
+              id: "sub_current",
+              created: 2,
+              status: "past_due",
+              items: {
+                data: [
+                  {
+                    price: { id: "price_example" },
+                    current_period_start: 1791462000,
+                    current_period_end: 1794140400,
+                  },
+                ],
+              },
+            },
+          ],
+        };
+      },
+    },
+  } as unknown as Stripe;
+  await applyStripeEvent(
+    {
+      id: "evt_stale",
+      type: "invoice.paid",
+      livemode: false,
+      data: { object: { customer: "cus_example", status: "active" } },
+    } as unknown as Stripe.Event,
+    stripe,
+    "price_example",
+    admin,
+  );
+  assert.equal(recorded?.p_status, "past_due");
+  assert.equal(recorded?.p_live, false);
+  assert.equal(recorded?.p_subscription, "sub_current");
 });

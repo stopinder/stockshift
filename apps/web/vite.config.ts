@@ -5,6 +5,8 @@ import uploads from "./api/uploads.ts";
 import exportHandler from "./server/export.ts";
 import pdfHandler from "./api/pdf.ts";
 import workbookHandler from "./api/workbook.ts";
+import billingHandler from "./api/billing.ts";
+import stripeWebhookHandler from "./api/stripe-webhook.ts";
 import { validateDeploymentConfig } from "./server/supabase-upload-gateway.ts";
 
 export default defineConfig(({ command }) => {
@@ -19,6 +21,10 @@ export default defineConfig(({ command }) => {
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             const path = req.url?.split("?")[0];
+            if (path === "/api/stripe-webhook") {
+              await stripeWebhookHandler(req, res);
+              return;
+            }
             if (path === "/api/export") {
               await exportHandler(req, res);
               return;
@@ -26,7 +32,8 @@ export default defineConfig(({ command }) => {
             if (
               path !== "/api/uploads" &&
               path !== "/api/workbook" &&
-              path !== "/api/pdf"
+              path !== "/api/pdf" &&
+              path !== "/api/billing"
             ) {
               next();
               return;
@@ -43,11 +50,13 @@ export default defineConfig(({ command }) => {
               }
               Object.assign(req, { body: body ? JSON.parse(body) : null });
               await (
-                path === "/api/pdf"
-                  ? pdfHandler
-                  : path === "/api/workbook"
-                    ? workbookHandler
-                    : uploads
+                path === "/api/billing"
+                  ? billingHandler
+                  : path === "/api/pdf"
+                    ? pdfHandler
+                    : path === "/api/workbook"
+                      ? workbookHandler
+                      : uploads
               )(req, res);
             } catch {
               res.statusCode = 400;

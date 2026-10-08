@@ -36,9 +36,13 @@ const bytes = (value: number) =>
         <strong>{{
           allowance.plan === "pilot"
             ? "Pilot workspace"
-            : allowance.plan === "paid"
-              ? "Monthly comparison allowance"
-              : "Trial comparison allowance"
+            : allowance.plan === "subscription_required"
+              ? allowance.test_workspace
+                ? "Stripe test workspace"
+                : "Subscription required"
+              : allowance.plan === "paid"
+                ? "Monthly comparison allowance"
+                : "Trial comparison allowance"
         }}</strong>
         <button class="quiet" @click="$emit('refresh')">
           Refresh allowance
@@ -46,6 +50,14 @@ const bytes = (value: number) =>
       </div>
       <p v-if="allowance.plan === 'pilot'" class="muted">
         Your existing pilot access has no comparison or upload allowance cap.
+      </p>
+      <p v-else-if="allowance.plan === 'subscription_required'" class="muted">
+        {{
+          allowance.test_workspace
+            ? "This workspace is for Stripe testing only. It has no additional trial comparisons and cannot receive live payments."
+            : "This additional business workspace needs its own £29/month subscription before uploading or processing catalogues."
+        }}
+        <a href="#/billing">Open workspace billing</a>.
       </p>
       <template v-else>
         <p class="allowance-count">
@@ -88,7 +100,8 @@ const bytes = (value: number) =>
           ready file; a new comparison needs two reservations.
         </p>
         <p v-if="allowance.plan === 'trial'" class="hint">
-          Paid plans are not open yet.
+          <a href="#/billing">View workspace billing</a> for subscription
+          availability.
         </p>
       </template>
     </template>

@@ -12,6 +12,7 @@ env.STOCKSHIFT_TEST_LOCAL_POSTGRES = '1'
 for (const args of [
   ['--test', 'supabase/tests/allowance.local.mjs'],
   ['--test', 'supabase/tests/release-baseline.test.mjs'],
+  ['--test', 'supabase/tests/workspace-creation.test.mjs'],
   ['--test', 'supabase/tests/security.test.mjs'],
   ['--test', 'supabase/tests/jobs.local.mjs'],
   ['--test', 'supabase/tests/review.local.mjs'],
