@@ -188,9 +188,35 @@
   display: flex;
   align-items: center;
   gap: 2.5rem;
+  flex-wrap: wrap;
   padding: 1rem max(24px, calc((100vw - 1320px) / 2));
   background: white;
   border-bottom: 1px solid var(--color-border);
+}
+.app-header nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.workspace-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.workspace-name {
+  max-width: 220px;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.test-workspace-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.test-workspace-choice input {
+  width: auto;
 }
 .brand {
   display: flex;
@@ -223,6 +249,7 @@ nav a[aria-current] {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  flex-wrap: wrap;
 }
 .header-account select {
   max-width: 220px;

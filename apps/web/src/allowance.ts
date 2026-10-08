@@ -1,7 +1,8 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
 import type { Client } from "./workflow";
 export interface Allowance {
-  plan: "pilot" | "trial" | "paid";
+  plan: "pilot" | "trial" | "paid" | "subscription_required";
+  test_workspace?: boolean;
   comparisons_remaining: number | null;
   comparison_limit: number | null;
   uploads_remaining: number | null;
@@ -12,13 +13,22 @@ export interface Allowance {
 }
 export function parseAllowance(value: unknown): Allowance {
   const a = value as Allowance | null;
-  if (!a || !["pilot", "trial", "paid"].includes(a.plan))
+  if (
+    !a ||
+    !["pilot", "trial", "paid", "subscription_required"].includes(a.plan)
+  )
     throw new Error("Invalid allowance");
   const pairs = [
     [a.comparisons_remaining, a.comparison_limit],
     [a.uploads_remaining, a.upload_limit],
     [a.bytes_remaining, a.byte_limit],
   ];
+  if (
+    a.plan === "subscription_required" &&
+    (pairs.some(([remaining]) => remaining !== 0) ||
+      typeof a.test_workspace !== "boolean")
+  )
+    throw new Error("Invalid allowance");
   if (a.plan === "pilot") {
     if (
       pairs.some((pair) => pair.some((v) => v !== null)) ||

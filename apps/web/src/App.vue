@@ -8,6 +8,7 @@ import NewComparison from "./components/NewComparison.vue";
 import ComparisonDetail from "./components/ComparisonDetail.vue";
 import WorkspaceAllowance from "./components/WorkspaceAllowance.vue";
 import WorkspaceBilling from "./components/WorkspaceBilling.vue";
+import NewWorkspace from "./components/NewWorkspace.vue";
 import { useAllowance } from "./allowance";
 let client: ReturnType<typeof browserClient> | null = null;
 const configError = ref("");
@@ -27,7 +28,8 @@ const email = ref(""),
 const registrationEnabled =
   import.meta.env.VITE_STOCKSHIFT_REGISTRATION_ENABLED === "1";
 const notice = ref("");
-const workspaceName = ref("");
+const billingTestMode =
+  import.meta.env.VITE_STOCKSHIFT_BILLING_TEST_MODE === "1";
 const recovering = ref(
   new URLSearchParams(location.hash.slice(1)).get("type") === "recovery",
 );
@@ -162,25 +164,16 @@ async function authenticate() {
     busy.value = false;
   }
 }
-async function createWorkspace() {
-  if (!client) return;
-  busy.value = true;
-  error.value = "";
-  try {
-    const result = await client.rpc("create_customer_workspace", {
-      p_name: workspaceName.value.trim(),
-    });
-    if (result.error)
-      throw new Error(
-        "Workspace creation failed. Confirm your email address and try again.",
-      );
-    await memberships();
-    navigate("/comparisons");
-  } catch (e) {
-    error.value = friendlyError(e);
-  } finally {
-    busy.value = false;
+async function workspaceCreated(id: string, requiresSubscription: boolean) {
+  await memberships();
+  if (!tenants.value.some((t) => t.id === id)) {
+    error.value =
+      "Workspace created, but its membership could not be reloaded. Refresh the page to try again.";
+    return;
   }
+  tenantId.value = id;
+  localStorage.setItem("stockshift.tenant", id);
+  navigate(requiresSubscription ? "/billing" : "/comparisons");
 }
 async function updatePassword() {
   if (!client || !recovering.value) return;
@@ -278,12 +271,25 @@ onUnmounted(() => {
         >
       </nav>
       <div class="header-account">
-        <label class="sr-only" for="workspace">Workspace</label
-        ><select id="workspace" v-model="tenantId" @change="changeTenant">
-          <option v-for="t in tenants" :key="t.id" :value="t.id">
-            {{ t.name }}
-          </option></select
-        ><button class="quiet" @click="signOut">Sign out</button>
+        <div class="workspace-control">
+          <label v-if="tenants.length > 1" for="workspace">Workspace</label>
+          <span v-else class="muted">Workspace</span>
+          <select
+            v-if="tenants.length > 1"
+            id="workspace"
+            v-model="tenantId"
+            @change="changeTenant"
+          >
+            <option v-for="t in tenants" :key="t.id" :value="t.id">
+              {{ t.name }}
+            </option>
+          </select>
+          <span v-else class="workspace-name">{{
+            tenant?.name ?? "None selected"
+          }}</span>
+        </div>
+        <a class="button quiet" href="#/workspaces/new">Create workspace</a>
+        <button class="quiet" @click="signOut">Sign out</button>
       </div>
     </template>
     <a v-else class="button quiet" href="#/login">Sign in</a>
@@ -390,24 +396,14 @@ onUnmounted(() => {
     </section>
     <template v-else>
       <p v-if="error" role="alert" class="alert">{{ error }}</p>
-      <section v-if="!tenant" class="panel state">
-        <h1>Create your business workspace</h1>
-        <p>
-          Your account is signed in. Set up a workspace for your catalogue
-          comparisons.
-        </p>
-        <form class="workspace-create" @submit.prevent="createWorkspace">
-          <label
-            >Business or workspace name<input
-              v-model="workspaceName"
-              maxlength="200"
-              required /></label
-          ><button class="primary" :disabled="busy">
-            {{ busy ? "Creating…" : "Create workspace" }}
-          </button>
-        </form>
-      </section>
-      <template v-else-if="client"
+      <NewWorkspace
+        v-if="client && (route === '/workspaces/new' || !tenant)"
+        :client="client"
+        :test-mode="billingTestMode"
+        :has-workspace="tenants.length > 0"
+        @created="workspaceCreated"
+      />
+      <template v-else-if="client && tenant"
         ><div class="workspace-line">
           {{ tenant.name }} <span class="badge">{{ tenant.role }}</span>
         </div>

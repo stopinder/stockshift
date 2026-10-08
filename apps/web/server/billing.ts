@@ -58,7 +58,19 @@ export async function ownerContext(token: string, tenant: unknown) {
     .maybeSingle();
   if (membership.error || membership.data?.role !== "owner")
     throw new BillingError(403, "Only a workspace owner can manage billing.");
-  return { admin, tenant, user: identity.data.user };
+  const workspace = await admin
+    .from("workspace_allowances")
+    .select("test_workspace")
+    .eq("tenant_id", tenant)
+    .single();
+  if (workspace.error)
+    throw new BillingError(503, "Billing workspace unavailable.");
+  return {
+    admin,
+    tenant,
+    user: identity.data.user,
+    testWorkspace: workspace.data.test_workspace,
+  };
 }
 export function validatePrice(
   price: Stripe.Price,
@@ -97,6 +109,11 @@ export async function billingStatus(
       };
     throw e;
   }
+  if (ctx.testWorkspace && cfg.live)
+    throw new BillingError(
+      409,
+      "Test workspaces cannot receive live payments.",
+    );
   const account = await ctx.admin
     .from("billing_accounts")
     .select("tenant_id")
@@ -130,6 +147,11 @@ export async function billingAction(
   const ctx = await ownerContext(token, input.tenantId);
   if (input.action === "status") return billingStatus(ctx);
   const cfg = billingConfig();
+  if (ctx.testWorkspace && cfg.live)
+    throw new BillingError(
+      409,
+      "Test workspaces cannot receive live payments.",
+    );
   const stripe = new Stripe(cfg.key);
   const price = await stripe.prices.retrieve(cfg.price, {
     expand: ["product"],
