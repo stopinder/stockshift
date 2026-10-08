@@ -54,6 +54,9 @@ before(async () => {
     users[role] = { id: created.data.user!.id, token: login.data.session!.access_token, client }
   }
   await db.query('insert into public.tenants(id,name) values ($1,$2),($3,$4)', [A,'HTTP tenant A',B,'HTTP tenant B'])
+  // This shared stress fixture exercises more than trial upload/comparison limits.
+  // Fresh non-exempt quota enforcement is covered by allowance.local + browser acceptance.
+  await db.query('update public.workspace_allowances set pilot_exempt=true where tenant_id in ($1,$2)', [A,B])
   for (const role of ['owner', 'editor', 'viewer', 'other']) {
     await db.query('insert into public.tenant_memberships(tenant_id,user_id,role) values ($1,$2,$3)',
       [role === 'other' ? B : A, users[role]!.id, role === 'other' ? 'owner' : role])

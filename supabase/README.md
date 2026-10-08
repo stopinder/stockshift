@@ -59,6 +59,14 @@ migrations.
 migrations applied. Preserve an existing populated database: inspect its data and
 migration history, then use `npm run supabase:local -- migration up --local` to
 apply only pending migrations. Do not reset an existing database as a test prerequisite.
+If the reconciled branch includes missing versions older than the latest local
+ledger entry, review the exact missing list first, then use
+`npm run supabase:local -- migration up --local --include-all`. The wrapper permits
+this only with `--local`; linked projects and remote URLs remain rejected.
+The native allowance test uses a non-exempt fresh trial and independent connections
+to exercise duplicate/concurrent comparison enqueue and fenced retries. The shared
+HTTP upload stress fixture is explicitly pilot-exempt because it exceeds trial
+resource limits; fresh-trial PDF accounting is asserted in browser acceptance.
 It runs the same 32 SQL security tests against PostgreSQL on `127.0.0.1:54322`,
 without the embedded Auth/Storage bootstrap or reapplying application migrations.
 Foundation SQL fixtures and per-case mutations are rolled back; job/HTTP fixtures

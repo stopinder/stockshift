@@ -108,6 +108,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel("Workspace", { exact: true }).selectOption(tenant);
 });
 async function create(page: Page) {
+  await allowance(3, 0);
   await page.getByRole("link", { name: "+ New comparison" }).click();
   await page.getByLabel("Comparison name").fill("Local PDF acceptance");
   await page.getByLabel("Supplier", { exact: true }).selectOption("new");
@@ -116,6 +117,26 @@ async function create(page: Page) {
   await expect(
     page.getByRole("heading", { name: "Add your catalogue files" }),
   ).toBeVisible();
+}
+
+async function allowance(remaining: number, files: number) {
+  const value = (
+    await db.query(
+      "select pilot_exempt,trial_remaining,reserved_files,reserved_bytes,paid_used from public.workspace_allowances where tenant_id=$1",
+      [tenant],
+    )
+  ).rows[0];
+  expect(value.pilot_exempt).toBe(false);
+  expect(value.trial_remaining).toBe(remaining);
+  expect(value.reserved_files).toBe(files);
+  expect(value.paid_used).toBe(0);
+  const bytes = (
+    await db.query(
+      "select coalesce(sum(expected_byte_count),0)::text bytes from public.source_files where tenant_id=$1",
+      [tenant],
+    )
+  ).rows[0].bytes;
+  expect(String(value.reserved_bytes)).toBe(bytes);
 }
 
 async function mapAndInspect(page: Page, index: number) {
@@ -206,6 +227,7 @@ for (const corrected of [false, true])
       await expect(area.getByLabel("Last page")).toHaveValue("1");
     }
     await noProducts();
+    await allowance(3, 2);
     await expect(
       page.getByRole("button", { name: "Start comparison", exact: true }),
     ).toBeDisabled();
@@ -227,6 +249,7 @@ for (const corrected of [false, true])
       ).toBeVisible();
       await worker();
       await mapAndInspect(page, index);
+      await allowance(3, 2);
     }
     await expect(
       page.getByRole("button", { name: "Start comparison", exact: true }),
@@ -264,6 +287,7 @@ for (const corrected of [false, true])
       page.getByRole("button", { name: "Start comparison", exact: true }),
     ).toBeDisabled();
     await confirm(page, 1);
+    await allowance(3, 2);
     await page.reload();
     await expect(
       page.getByRole("button", { name: "Start comparison", exact: true }),
@@ -285,6 +309,7 @@ for (const corrected of [false, true])
       page.getByRole("heading", { name: "Comparison queued" }),
     ).toBeVisible();
     await worker();
+    await allowance(2, 2);
     await expect(
       page.getByRole("region", { name: "Persisted outcome counts" }),
     ).toBeVisible();
@@ -443,6 +468,12 @@ for (const corrected of [false, true])
             (e) => e.configuration,
           ),
           exportRows: parseExport(csv),
+          allowance: (
+            await db.query(
+              "select * from public.workspace_allowances where tenant_id=$1",
+              [tenant],
+            )
+          ).rows[0],
         },
         null,
         2,
@@ -488,6 +519,7 @@ test("Blindtex stops at persisted OCR-required without extraction, comparison or
     area.getByRole("heading", { name: "OCR required", exact: true }),
   ).toBeVisible();
   await noProducts();
+  await allowance(3, 1);
   expect(ocrRequests).toEqual([]);
   await screenshot(page, info.project.name, "blindtex-stopped");
 });

@@ -10,6 +10,8 @@ const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
   !/^(SUPABASE_|PG|DATABASE_URL|STOCKSHIFT_LOCAL_SUPABASE_|STOCKSHIFT_SUPABASE_)/i.test(key)))
 env.STOCKSHIFT_TEST_LOCAL_POSTGRES = '1'
 for (const args of [
+  ['--test', 'supabase/tests/allowance.local.mjs'],
+  ['--test', 'supabase/tests/release-baseline.test.mjs'],
   ['--test', 'supabase/tests/security.test.mjs'],
   ['--test', 'supabase/tests/jobs.local.mjs'],
   ['--test', 'supabase/tests/review.local.mjs'],

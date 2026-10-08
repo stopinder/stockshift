@@ -5,7 +5,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { test } from "node:test";
 import { PGlite } from "@electric-sql/pglite";
 
-test("reconciled baseline preserves CSV charging and exposes the PDF allowance rollout blocker", async () => {
+test("reconciled baseline charges comparisons only and preserves bounded PDF preparation", async () => {
   const native = process.env.STOCKSHIFT_TEST_LOCAL_POSTGRES === "1";
   let db;
   const dir = new URL("../migrations/", import.meta.url);
@@ -149,28 +149,75 @@ test("reconciled baseline preserves CSV charging and exposes the PDF allowance r
       ).rows[0].value;
     const inspected = await inspect();
     assert.equal(inspected.job.kind, "inspect_pdf");
-    assert.equal((await status()).comparisons_remaining, 1); // Existing baseline policy, intentionally unchanged.
+    assert.equal((await status()).comparisons_remaining, 2);
     assert.equal((await inspect()).job.id, inspected.job.id);
-    assert.equal((await status()).comparisons_remaining, 1);
+    assert.equal((await status()).comparisons_remaining, 2);
     const cfg = { first_page: 1, last_page: 1, strategy: "lines" };
     await db.query("select public.enqueue_pdf_extraction($1,$2,$3)", [
       tenant,
       pdf.id,
       cfg,
     ]);
+    assert.equal((await status()).comparisons_remaining, 2);
+    await db.query("select public.enqueue_pdf_extraction($1,$2,$3)", [
+      tenant,
+      pdf.id,
+      cfg,
+    ]);
+    assert.equal((await status()).comparisons_remaining, 2);
+    for (let i = 0; i < 2; i++)
+      await db.query("select public.enqueue_comparison_job($1,$2,$3,$4,$4,3)", [
+        tenant,
+        comparison,
+        randomUUID(),
+        options,
+      ]);
+    assert.equal((await status()).comparisons_remaining, 0);
+    assert.equal((await queue()).id, first.id);
+    await db.query("select public.enqueue_pdf_extraction($1,$2,$3)", [
+      tenant,
+      pdf.id,
+      { ...cfg, strategy: "text" },
+    ]);
     assert.equal((await status()).comparisons_remaining, 0);
     await db.exec("savepoint exhausted");
     await assert.rejects(
-      db.query("select public.enqueue_pdf_extraction($1,$2,$3)", [
+      db.query("select public.enqueue_comparison_job($1,$2,$3,$4,$4,3)", [
         tenant,
-        pdf.id,
-        { ...cfg, strategy: "text" },
+        comparison,
+        randomUUID(),
+        options,
       ]),
       (e) =>
         e.code === "P0001" &&
         e.message === "Trial comparison allowance reached",
     );
     await db.exec("rollback to exhausted; release exhausted");
+    // Local-only subscription fixture: the same job filter must also preserve
+    // the existing paid counter/period policy, without changing billing code.
+    await db.exec("reset role");
+    await db.query(
+      "insert into public.billing_accounts(tenant_id,stripe_customer_id) values($1,$2)",
+      [tenant, "cus_" + randomUUID().replaceAll("-", "")],
+    );
+    await db.query(
+      "insert into public.workspace_subscriptions(tenant_id,stripe_subscription_id,status,period_start,period_end,livemode) values($1,$2,'active',now()-interval '1 hour',now()+interval '1 month',true)",
+      [tenant, "sub_" + randomUUID().replaceAll("-", "")],
+    );
+    await db.exec("set role authenticated");
+    await db.query("select public.enqueue_pdf_extraction($1,$2,$3)", [
+      tenant,
+      pdf.id,
+      { ...cfg, last_page: 2 },
+    ]);
+    assert.equal((await status()).comparisons_remaining, 20);
+    await db.query("select public.enqueue_comparison_job($1,$2,$3,$4,$4,3)", [
+      tenant,
+      comparison,
+      randomUUID(),
+      options,
+    ]);
+    assert.equal((await status()).comparisons_remaining, 19);
     await db.query("select set_config('request.jwt.claims',$1,false)", [
       JSON.stringify({ sub: other }),
     ]);

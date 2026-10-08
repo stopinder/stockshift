@@ -8,7 +8,9 @@ const allowed = [
   ['--help'], ['--version'], ['init'], ['start'], ['stop'],
   ['migration', '--help'], ['migration', 'new', '--help'],
   ['migration', 'up', '--help'], ['migration', 'up', '--local'],
+  ['migration', 'up', '--local', '--include-all'],
   ['db', 'reset', '--help'], ['db', 'lint', '--help'], ['test', 'db', '--help'],
+  ['db', 'advisors', '--help'], ['db', 'advisors', '--local'],
   ['db', 'reset', '--local'], ['db', 'lint', '--local'], ['migration', 'list', '--local'],
   ['status', '--output', 'json'],
 ]
