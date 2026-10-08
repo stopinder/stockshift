@@ -18,6 +18,7 @@
   "dependencies": {
     "@stockshift/contracts": "0.1.0",
     "@supabase/supabase-js": "2.117.2",
+    "stripe": "23.0.0",
     "vue": "3.5.43"
   },
   "devDependencies": {

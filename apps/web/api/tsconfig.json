@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["./*.ts", "../server/**/*.ts", "../src/supabase-config.ts"]
+}

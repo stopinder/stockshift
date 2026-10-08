@@ -99,6 +99,15 @@ export function validateDeploymentConfig(
     );
 }
 function result<T>(data: T | null, error: unknown): T {
+  if (
+    (error as { code?: string })?.code === "P0001" &&
+    (error as { message?: string })?.message ===
+      "Workspace upload allowance reached"
+  )
+    throw new UploadError(
+      429,
+      "Your workspace upload allowance has been reached.",
+    );
   if (error || data === null)
     throw new UploadError(409, "Upload storage/database operation failed");
   return data;
