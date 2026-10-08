@@ -20,7 +20,13 @@ export function billingConfig(env: NodeJS.ProcessEnv = process.env) {
   )
     throw new BillingError(503, "Billing configuration unavailable.");
   const origin = env.STOCKSHIFT_PUBLIC_ORIGIN ?? "";
-  if (origin !== "https://stockshift.co")
+  const preview = env.VERCEL_ENV === "preview";
+  if (preview && mode !== "test")
+    throw new BillingError(503, "Preview billing requires test mode.");
+  const allowedOrigin = preview
+    ? "https://stockshift-git-codex-customer-allowance-stopinders-projects.vercel.app"
+    : "https://stockshift.co";
+  if (origin !== allowedOrigin)
     throw new BillingError(503, "Billing return address unavailable.");
   const price = env.STOCKSHIFT_STRIPE_PRICE_ID ?? "";
   if (!/^price_[A-Za-z0-9]+$/.test(price))
@@ -75,12 +81,55 @@ export function validatePrice(
   )
     throw new BillingError(503, "Billing plan is not approved.");
 }
+export async function billingStatus(
+  ctx: Awaited<ReturnType<typeof ownerContext>>,
+) {
+  let cfg: ReturnType<typeof billingConfig>;
+  try {
+    cfg = billingConfig();
+  } catch (e) {
+    if (e instanceof BillingError && e.status === 503)
+      return {
+        enabled: false,
+        mode: null,
+        hasAccount: false,
+        subscription: null,
+      };
+    throw e;
+  }
+  const account = await ctx.admin
+    .from("billing_accounts")
+    .select("tenant_id")
+    .eq("tenant_id", ctx.tenant)
+    .maybeSingle();
+  const subscription = await ctx.admin
+    .from("workspace_subscriptions")
+    .select("status,period_end,livemode")
+    .eq("tenant_id", ctx.tenant)
+    .maybeSingle();
+  if (account.error || subscription.error)
+    throw new BillingError(503, "Subscription status unavailable.");
+  if (subscription.data && subscription.data.livemode !== cfg.live)
+    throw new BillingError(409, "Use a separate workspace for test billing.");
+  return {
+    enabled: true,
+    mode: cfg.live ? "live" : "test",
+    hasAccount: !!account.data,
+    subscription: subscription.data
+      ? {
+          status: subscription.data.status,
+          periodEnd: subscription.data.period_end,
+        }
+      : null,
+  };
+}
 export async function billingAction(
   token: string,
   input: Record<string, unknown>,
 ) {
-  const cfg = billingConfig();
   const ctx = await ownerContext(token, input.tenantId);
+  if (input.action === "status") return billingStatus(ctx);
+  const cfg = billingConfig();
   const stripe = new Stripe(cfg.key);
   const price = await stripe.prices.retrieve(cfg.price, {
     expand: ["product"],
@@ -93,10 +142,26 @@ export async function billingAction(
     .maybeSingle();
   if (customer.error)
     throw new BillingError(503, "Billing workspace unavailable.");
+  const existing = await ctx.admin
+    .from("workspace_subscriptions")
+    .select("status,livemode")
+    .eq("tenant_id", ctx.tenant)
+    .maybeSingle();
+  if (existing.error)
+    throw new BillingError(503, "Subscription status unavailable.");
+  if (existing.data && existing.data.livemode !== cfg.live)
+    throw new BillingError(409, "Use a separate workspace for test billing.");
   if (input.action === "portal") {
     if (!customer.data)
       throw new BillingError(409, "This workspace has no billing account.");
+    const configuration = process.env.STOCKSHIFT_STRIPE_PORTAL_CONFIGURATION_ID;
+    if (!configuration || !/^bpc_[A-Za-z0-9]+$/.test(configuration))
+      throw new BillingError(
+        503,
+        "Subscription management is not available yet.",
+      );
     const portal = await stripe.billingPortal.sessions.create({
+      configuration,
       customer: customer.data.stripe_customer_id,
       return_url: `${cfg.origin}/#/billing`,
     });
@@ -104,18 +169,16 @@ export async function billingAction(
   }
   if (input.action !== "checkout")
     throw new BillingError(400, "Unknown billing action.");
-  const existing = await ctx.admin
-    .from("workspace_subscriptions")
-    .select("status")
-    .eq("tenant_id", ctx.tenant)
-    .maybeSingle();
-  if (existing.error)
-    throw new BillingError(503, "Subscription status unavailable.");
   if (
     existing.data &&
-    ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(
-      existing.data.status,
-    )
+    [
+      "active",
+      "trialing",
+      "past_due",
+      "unpaid",
+      "incomplete",
+      "paused",
+    ].includes(existing.data.status)
   )
     throw new BillingError(
       409,
@@ -150,6 +213,7 @@ export async function billingAction(
   const checkout = await stripe.checkout.sessions.create(
     {
       mode: "subscription",
+      integration_identifier: "stockshift_csv_xgvrkqna",
       customer: customerId,
       line_items: [{ price: cfg.price, quantity: 1 }],
       success_url: `${cfg.origin}/#/billing?checkout=complete`,
@@ -212,9 +276,14 @@ export async function applyStripeEvent(
     (s) => s.items.data.length === 1 && s.items.data[0]?.price.id === priceId,
   );
   const active = relevant.filter((s) =>
-    ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(
-      s.status,
-    ),
+    [
+      "active",
+      "trialing",
+      "past_due",
+      "unpaid",
+      "incomplete",
+      "paused",
+    ].includes(s.status),
   );
   if (active.length > 1)
     throw new Error("Multiple subscriptions require investigation");

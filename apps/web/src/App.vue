@@ -7,6 +7,7 @@ import ComparisonList from "./components/ComparisonList.vue";
 import NewComparison from "./components/NewComparison.vue";
 import ComparisonDetail from "./components/ComparisonDetail.vue";
 import WorkspaceAllowance from "./components/WorkspaceAllowance.vue";
+import WorkspaceBilling from "./components/WorkspaceBilling.vue";
 import { useAllowance } from "./allowance";
 let client: ReturnType<typeof browserClient> | null = null;
 const configError = ref("");
@@ -48,6 +49,12 @@ const canEdit = computed(() =>
 );
 const comparisonId = computed(
   () => /^\/comparisons\/([0-9a-f-]{36})$/.exec(route.value)?.[1],
+);
+const billingRoute = computed(() => route.value.split("?")[0] === "/billing");
+const checkoutComplete = computed(
+  () =>
+    new URLSearchParams(route.value.split("?")[1]).get("checkout") ===
+    "complete",
 );
 function hashChanged() {
   route.value = location.hash.slice(1) || "/";
@@ -266,6 +273,9 @@ onUnmounted(() => {
           :aria-current="route === '/comparisons' ? 'page' : undefined"
           >Comparisons</a
         >
+        <a href="#/billing" :aria-current="billingRoute ? 'page' : undefined"
+          >Billing</a
+        >
       </nav>
       <div class="header-account">
         <label class="sr-only" for="workspace">Workspace</label
@@ -407,8 +417,17 @@ onUnmounted(() => {
           :error="allowance.error.value"
           @refresh="allowance.refresh"
         />
+        <WorkspaceBilling
+          v-if="billingRoute"
+          :key="`${tenantId}:${route}`"
+          :client="client"
+          :tenant-id="tenantId"
+          :is-owner="tenant.role === 'owner'"
+          :checkout-complete="checkoutComplete"
+          @refreshed="allowance.refresh"
+        />
         <NewComparison
-          v-if="route === '/comparisons/new' && canEdit"
+          v-else-if="route === '/comparisons/new' && canEdit"
           :key="tenantId"
           :client="client"
           :tenant-id="tenantId"

@@ -88,7 +88,8 @@ const bytes = (value: number) =>
           ready file; a new comparison needs two reservations.
         </p>
         <p v-if="allowance.plan === 'trial'" class="hint">
-          Paid plans are not open yet.
+          <a href="#/billing">View workspace billing</a> for subscription
+          availability.
         </p>
       </template>
     </template>

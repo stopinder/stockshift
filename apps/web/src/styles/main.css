@@ -1154,3 +1154,29 @@ pre {
   color: #936b27;
   font-weight: 600;
 }
+.billing-panel {
+  padding: 24px;
+}
+.billing-panel > p {
+  margin: 16px 0;
+}
+.billing-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin: 24px 0;
+}
+.billing-summary dt {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+.billing-summary dd {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+.billing-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
