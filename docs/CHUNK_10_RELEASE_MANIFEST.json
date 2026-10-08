@@ -1,5 +1,5 @@
 {
-  "scope": "Chunks 4–9 and required dependencies, reconciled with cached CSV baseline in Chunk 11; preparation only",
+  "scope": "Chunks 4–9 and required CSV baseline dependencies, reconciled in Chunk 11 and comparison-only allowance fix verified in Chunk 12; preparation only",
   "branch": "codex/preview-cpu-pdf-release",
   "base": "65000541282060083cd8b32721cb80e2a0e0abab",
   "originalMain": "b496e41b66747e9275c9a6733cdf9772117ea58e",
@@ -58,6 +58,7 @@
     "docs/CHUNK_10_PREVIEW_RELEASE.md",
     "docs/CHUNK_10_RELEASE_MANIFEST.json",
     "docs/CHUNK_11_BASELINE_RECONCILIATION.md",
+    "docs/CHUNK_12_ALLOWANCE_ACCOUNTING.md",
     "docs/CHUNK_4_CPU_PDF_INSPECTION.md",
     "docs/CHUNK_5_PDF_UPLOAD_API_INSPECTION.md",
     "docs/CHUNK_6_PDF_INSPECTION_UI.md",
@@ -106,7 +107,9 @@
     "supabase/migrations/20261008182416_cpu_pdf_inspection.sql",
     "supabase/migrations/20261008194938_upload_verification_recovery.sql",
     "supabase/migrations/20261008201320_hosted_cpu_pdf_capabilities.sql",
+    "supabase/migrations/20261008213000_comparison_job_allowance_accounting.sql",
     "supabase/tests/allowance-status.test.mjs",
+    "supabase/tests/allowance.local.mjs",
     "supabase/tests/allowances.test.mjs",
     "supabase/tests/billing.test.mjs",
     "supabase/tests/bootstrap.sql",
@@ -289,6 +292,12 @@
       "sha256": "7d90efe9c269f4721f26277a9e3d8e6e3fcdbd0ee1fb4d07f6a3590b3f98b071",
       "trackedAtBase": false,
       "fromCsvBaseline": false
+    },
+    {
+      "path": "supabase/migrations/20261008213000_comparison_job_allowance_accounting.sql",
+      "sha256": "6f5b1577037acda45ef757ad0b029d283880db577a40d9646da1badde2442968",
+      "trackedAtBase": false,
+      "fromCsvBaseline": false
     }
   ],
   "flagsRemainOff": true,
@@ -296,7 +305,7 @@
   "reconciledCodeCommit": "4fdf7f4302c2f0439374a4175c179b0342e3250e",
   "csvBaseline": "7a14fbe09cc7aed025e2cc2ee6e12624c80df0d9",
   "releaseRef": "refs/heads/codex/preview-cpu-pdf-release",
-  "releaseCommitResolution": "Resolve releaseRef to obtain the final release commit; documentation commit follows reconciledCodeCommit.",
+  "releaseCommitResolution": "Resolve releaseRef for final release documentation commit; its parent allowanceAccountingCodeCommit contains the verified Chunk 12 code.",
   "preservation": {
     "originalRoot": "C:/Users/Rob/WebstormProjects/stockshift",
     "originalRootBranch": "codex/chunk11-preserved-work",
@@ -435,8 +444,41 @@
     "supabase/tests/security.test.mjs"
   ],
   "remainingCompatibilityIssues": [
-    "Unchanged CSV allowance trigger consumes comparison allowance for PDF inspect/extract jobs; bounded-customer PDF rollout is blocked pending separately approved accounting decision.",
     "Old seven-argument finalizers remain incompatible with upload lease migration; shared Production database requires coordinated upgrade.",
-    "Actual deployed versions/migration history/infrastructure unknown; combined native/browser acceptance still required before enablement."
-  ]
+    "Actual deployed versions/migration history/infrastructure unknown; isolated Preview provisioning/configuration, approved migration/worker/API rollout and real hosted acceptance remain required.",
+    "OCR processing remains intentionally disabled; no scanned-document processing is included."
+  ],
+  "allowanceAccountingCodeCommit": "826f2fd9431889cde32202d736629fdfda882544",
+  "chunk12StartingCommit": "f18b829175c7ad78c636ae8b200cc27e54fcb609",
+  "chunk12ChangedFiles": [
+    "apps/web/e2e/pdf-acceptance.spec.ts",
+    "docs/CHUNK_10_PREVIEW_RELEASE.md",
+    "docs/CHUNK_10_RELEASE_MANIFEST.json",
+    "docs/CHUNK_12_ALLOWANCE_ACCOUNTING.md",
+    "scripts/supabase-local.mjs",
+    "scripts/verify-supabase-local.mjs",
+    "supabase/README.md",
+    "supabase/migrations/20261008213000_comparison_job_allowance_accounting.sql",
+    "supabase/tests/allowance.local.mjs",
+    "supabase/tests/release-baseline.test.mjs",
+    "supabase/tests/upload.local.ts"
+  ],
+  "chunk12Verification": {
+    "nativeLocalTests": 170,
+    "realBrowserDesktopMobileCases": 6,
+    "webUnitTests": 106,
+    "contractTests": 54,
+    "embeddedSqlTests": 53,
+    "typecheck": true,
+    "build": true,
+    "contractsGeneration": true,
+    "databaseLint": "passed",
+    "databaseAdvisors": "One pre-existing comparisons.editor_insert auth_rls_initplan performance warning; no new issue.",
+    "preservedPreExistingRows": 10996,
+    "preservedOriginalWorkingFiles": 240,
+    "localMigrationCount": 16,
+    "hostedAccess": false,
+    "hostedCapabilitiesEnabled": false,
+    "ocrCalls": 0
+  }
 }

@@ -1,6 +1,6 @@
 # Chunk 10 — reviewed local release and proposed Preview rollout
 
-Prepared October 8, 2026; updated after Chunk 11 baseline reconciliation. No push, hosted discovery, hosted migration, deployment,
+Prepared October 8, 2026; updated after Chunk 12 accounting verification. No push, hosted discovery, hosted migration, deployment,
 capability enablement, OCR request, GPU operation or billing change was performed.
 This is a review candidate, **not approval to deploy**.
 
@@ -67,18 +67,18 @@ capability was changed. The original root is preserved on
 `codex/chunk11-preserved-work`; the release branch is checked out in
 `.tools/chunk11-reconcile`. See [Chunk 11 evidence](CHUNK_11_BASELINE_RECONCILIATION.md).
 
-**New rollout blocker:** the unchanged baseline `bound_workspace_comparison`
-trigger counts every inserted job, including `inspect_pdf` and `extract_pdf`.
-Inspection/extraction do not bypass their review gates, but they consume trial/paid
-comparison allowance. A normal digital pair needs four processing jobs plus its
-comparison, exceeding a new customer's three-job trial. Native transactional
-verification reproduced this behavior. Do not enable PDF for bounded customer
-workspaces or assume CSV accounting describes a digital comparison. Resolve the
-accounting policy separately before enablement; this chunk does not change billing.
+**Allowance blocker resolved in Chunk 12:** the additive migration
+`20261008213000_comparison_job_allowance_accounting` restricts the existing
+`bound_workspace_comparison` INSERT trigger to `reconcile_csv` jobs. CPU inspection
+and extraction consume no comparison allowance; actual CSV/PDF comparisons retain
+the existing locked trial/paid counters. Upload count/bytes, prices, subscription
+policy, retry fencing and idempotency are unchanged. The six merged desktop/mobile
+cases passed using fresh non-exempt trial workspaces, local Supabase and the CPU
+worker. See [Chunk 12 evidence](CHUNK_12_ALLOWANCE_ACCOUNTING.md).
 
 The four baseline migrations below are now in the release, but their actual
 applied state remains unknown. Do not remove, replay or alter them on an existing
-database. The ledger must be reconciled against all fifteen files.
+database. The ledger must be reconciled against all sixteen files.
 
 **Preview must use an isolated StockShift database and queue.** Vercel Preview
 environment scope does not isolate a Supabase database. Applying these migrations
@@ -102,28 +102,30 @@ until its compatible API is deployed. Flags cannot fix the old CSV API conflict.
 ## Ordered migration review
 
 Hosted applied history is **unknown**, so these are candidate prerequisites,
-not a claim that fifteen migrations are pending there. Apply only verified missing
+not a claim that sixteen migrations are pending there. Apply only verified missing
 versions, in this order, matching the committed-byte hashes in the manifest.
 Five migrations were included by Chunk 10 and four are inherited from the
-reconciled CSV baseline; six already exist in the original base. No SQL was edited or duplicated during preparation.
+reconciled CSV baseline; six already exist in the original base. Chunk 12 adds one
+forward accounting migration; no previously published SQL is edited or duplicated.
 
-| Order/version                                     | Purpose and compatibility effect                                                                   |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| 1 `20261005141354_tenant_upload_foundations`      | Tenant/RLS/private Storage and upload RPC foundation; never replay initial schema.                 |
-| 2 `20261005155832_durable_csv_jobs`               | Durable CSV jobs, results and fenced claim/load/complete/fail RPCs.                                |
-| 3 `20261005175654_persistent_csv_review`          | Persistent review events and authorized export gates.                                              |
-| 4 `20261005184752_xlsx_ingestion`                 | XLSX source constraints and comparison functions; CSV signatures retained.                         |
-| 5 `20261005191747_digital_pdf_corrections`        | PDF extraction/correction revisions, queue constraints and confirmed-PDF comparison gates.         |
-| 6 `20261005220000_paddleocr_pages`                | Private OCR cache/provider RPC dependency; no provider execution or OCR enablement.                |
-| 7 `20261006194510_catalogue_layout_review`        | Explicit PDF layout/revision validation; direct digital configuration retained.                    |
-| 8 `20261006203229_catalogue_pricing_basis_review` | Supplier cost-basis/retail review safeguards; unrelated to subscription pricing.                   |
-| 9 `20261007132615_customer_workspace_onboarding`  | CSV baseline: confirmed customer workspace bootstrap with actual authorization.                    |
-| 10 `20261007133637_stripe_billing_foundation`     | CSV baseline: inactive account/subscription/event foundations, unchanged.                          |
-| 11 `20261007135419_customer_usage_allowances`     | CSV baseline: allowance counters/triggers/period rules unchanged; ALL job kinds currently charged. |
-| 12 `20261007153016_workspace_allowance_status`    | CSV baseline: read-only member-scoped allowance projection, unchanged.                             |
-| 13 `20261008182416_cpu_pdf_inspection`            | CPU inspection evidence/job kind and shared claim/fail functions; CSV signatures retained.         |
-| 14 `20261008194938_upload_verification_recovery`  | Private upload leases/eight-argument finalizer; old unfenced finish/fail rejected.                 |
-| 15 `20261008201320_hosted_cpu_pdf_capabilities`   | Private service-only worker registry; required even for upgraded 0/0 hosted workers.               |
+| Order/version                                           | Purpose and compatibility effect                                                                        |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 1 `20261005141354_tenant_upload_foundations`            | Tenant/RLS/private Storage and upload RPC foundation; never replay initial schema.                      |
+| 2 `20261005155832_durable_csv_jobs`                     | Durable CSV jobs, results and fenced claim/load/complete/fail RPCs.                                     |
+| 3 `20261005175654_persistent_csv_review`                | Persistent review events and authorized export gates.                                                   |
+| 4 `20261005184752_xlsx_ingestion`                       | XLSX source constraints and comparison functions; CSV signatures retained.                              |
+| 5 `20261005191747_digital_pdf_corrections`              | PDF extraction/correction revisions, queue constraints and confirmed-PDF comparison gates.              |
+| 6 `20261005220000_paddleocr_pages`                      | Private OCR cache/provider RPC dependency; no provider execution or OCR enablement.                     |
+| 7 `20261006194510_catalogue_layout_review`              | Explicit PDF layout/revision validation; direct digital configuration retained.                         |
+| 8 `20261006203229_catalogue_pricing_basis_review`       | Supplier cost-basis/retail review safeguards; unrelated to subscription pricing.                        |
+| 9 `20261007132615_customer_workspace_onboarding`        | CSV baseline: confirmed customer workspace bootstrap with actual authorization.                         |
+| 10 `20261007133637_stripe_billing_foundation`           | CSV baseline: inactive account/subscription/event foundations, unchanged.                               |
+| 11 `20261007135419_customer_usage_allowances`           | CSV baseline: allowance counters/triggers/period rules unchanged; job trigger narrowed by migration 16. |
+| 12 `20261007153016_workspace_allowance_status`          | CSV baseline: read-only member-scoped allowance projection, unchanged.                                  |
+| 13 `20261008182416_cpu_pdf_inspection`                  | CPU inspection evidence/job kind and shared claim/fail functions; CSV signatures retained.              |
+| 14 `20261008194938_upload_verification_recovery`        | Private upload leases/eight-argument finalizer; old unfenced finish/fail rejected.                      |
+| 15 `20261008201320_hosted_cpu_pdf_capabilities`         | Private service-only worker registry; required even for upgraded 0/0 hosted workers.                    |
+| 16 `20261008213000_comparison_job_allowance_accounting` | Only actual comparisons consume comparison allowance; upload reservations unchanged.                    |
 
 DDL takes locks on shared tables/constraints and replaces globally used functions.
 Existing rows must satisfy source/job constraints. Preserve a restorable backup,
@@ -144,7 +146,7 @@ queue claim can expire/dead-letter jobs under existing bounded lease rules.
    Stop any old Preview finalizers and drain old queue consumers gracefully.
 1. **Migrations:** apply only approved missing versions above to that verified
    isolated target. Check actual function signatures, grants, RLS, constraints
-   and private registry, with PDF flags still 0/0 and OCR 0. Wait for schema-cache
+   and private registry, including the comparison-only allowance trigger, with PDF flags still 0/0 and OCR 0. Wait for schema-cache
    refresh. Do not run database reset or the loopback-only local launcher here.
 2. **CPU worker:** build the reviewed worker image from the same release commit;
    pin its resulting digest, run non-root with hosted configuration and PDF flags
@@ -156,7 +158,7 @@ queue claim can expire/dead-letter jobs under existing bounded lease rules.
    outside root. Check browser/API project/key agreement, Auth, private Storage,
    fenced CSV upload/retry, compare/review/export and authorization isolation.
    Do not alter Production environment scope or promote this deployment.
-4. **Capability enablement:** after the PDF allowance blocker is resolved and explicit rollout approval, move all workers
+4. **Capability enablement:** after explicit rollout approval, move all workers
    to inspection 1/extraction 0 first. Drain/restart consistently; let old profiles
    expire (120 seconds) and verify agreement. Rebuild/redeploy Preview with matching
    server/browser 1/0 flags and prove inspection-only review gates. Then, if
@@ -204,7 +206,7 @@ as proof that an old unadvertised consumer is gone.
 
 ## Stop conditions and rollback
 
-Stop for unresolved PDF allowance semantics, shared Production database/queue, unknown or divergent migration history,
+Stop for failed fresh-trial allowance acceptance, shared Production database/queue, unknown or divergent migration history,
 unreconciled deployed baseline, invalid existing constraints, failed backup,
 missing registry RPCs, legacy consumers, stale/mixed advertisements, mismatched
 browser/API flags/origins/keys, authorization leakage, stale verification publish,
@@ -216,7 +218,7 @@ On failure, withdraw Preview traffic or redeploy the compatible new API/browser
 with flags 0/0 first; in-flight PDF work may already exist, so disable/drain workers
 under the incident plan and let leases expire naturally if interrupted. Restart
 all workers with flags 0/0, confirm old advertisements expire, and verify CSV.
-Keep additive schema/evidence/data; do not drop tables, reset, delete queues or
+Retain migration 16 when disabling PDF: restoring the all-job trigger would reintroduce incorrect charges. Keep additive schema/evidence/data; do not drop tables, reset, delete queues or
 rewrite applied migrations. Do not roll back the API to the old seven-argument
 finalizer while the lease migration remains. If the worker is rolled back, keep
 PDF entrypoints off and ensure no PDF job can be claimed by a legacy consumer;
@@ -226,12 +228,24 @@ OCR remains disabled and the GPU remains paused throughout.
 
 ## Verification evidence and limits
 
+Chunk 12 code commit: `826f2fd9431889cde32202d736629fdfda882544`; final documentation tip resolves
+from `refs/heads/codex/preview-cpu-pdf-release`. All 170 native local checks and six
+merged desktop/mobile real-browser cases passed. Inspection/extraction/confirmation
+leave trial allowance at 3; one comparison leaves 2. Exact baseline and corrected
+results/exports match their manifests. Contracts/typecheck/build, 106 web + 54
+contract + 53 embedded SQL tests, targeted formatting and database lint passed.
+Local advisors report only the pre-existing `comparisons.editor_insert` RLS
+performance warning. All 10,996 pre-existing rows and 240 original-worktree files
+remain unchanged. Five verified missing migrations (four baseline plus accounting)
+were applied only locally; all sixteen ledger versions now match the release.
+No historical counters were rewritten or refunded.
+
 Chunk 11: contracts/typecheck/build and 106 web + 54 contract + 53 embedded SQL
 tests passed. The new combined-schema compatibility case also passed against
 native local PostgreSQL inside a fully rolled-back transaction. All 10,996 rows
 and the ledger were unchanged across 22 public/private/Auth/Storage/ledger tables.
-Formatting and whitespace checks passed. No native full-suite/browser rerun was
-performed for the merged UI; that remains required before PDF rollout. The earlier
+Formatting and whitespace checks passed. At that point no native full-suite/browser rerun was
+performed for the merged UI; Chunk 12 now supplies that verification. The earlier
 CPU worker verification is reusable because worker code is unchanged.
 
 Reuse [Chunk 9 evidence](CHUNK_9_HOSTED_CPU_PDF_CODE.md): 168 native local checks,
@@ -267,8 +281,7 @@ was made. Native database/browser checks from Chunk 9 were reused, not rerun.
 No actual hosted compatibility, image deployment, identity, migration ledger or
 provisioned worker has been established.
 
-The known baseline code divergence is resolved. Release blockers remain PDF job
-allowance compatibility, approved isolated Preview
+The known baseline code divergence and PDF allowance defect are resolved. Release blockers remain approved isolated Preview
 infrastructure/configuration, hosted migration/worker/API rollout and real hosted
 acceptance. Administrative verifying recovery is now implemented and locally
 verified in Chunk 8; its deployment remains pending. OCR processing is intentionally
