@@ -1,11 +1,32 @@
 """Durable worker daemon: drain current lease on SIGTERM; PostgreSQL recovers hard exits."""
 
 import argparse
+import hashlib
+import json
+import os
 import signal
+from pathlib import Path
 from threading import Event
 from uuid import uuid4
 
 from stockshift_worker import __version__
+
+
+def log_runtime_identity():
+    jobs = Path(__file__).resolve().parents[1] / "jobs"
+    print(
+        json.dumps(
+            {
+                "uid": os.getuid() if hasattr(os, "getuid") else None,
+                "source_sha256": {
+                    name: hashlib.sha256((jobs / name).read_bytes()).hexdigest()
+                    for name in ("gateway.py", "capabilities.py", "runner.py")
+                },
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
 
 
 def serve(gateway, worker_id, stop, *, once=False, interval=2):
@@ -59,6 +80,7 @@ def main() -> int:
     for signum in (signal.SIGTERM, signal.SIGINT):
         previous[signum] = signal.signal(signum, shutdown)
     try:
+        log_runtime_identity()
         print("StockShift worker polling ready.", flush=True)
         return serve(gateway, str(uuid4()), stop, once=args.once, interval=args.poll_interval)
     finally:

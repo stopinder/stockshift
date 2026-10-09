@@ -1,6 +1,7 @@
 """Daemon shutdown, explicit hosted credentials and CSV preview execution boundaries."""
 
 import base64
+import hashlib
 import json
 import signal
 import sys
@@ -11,6 +12,22 @@ from test_job_runner import Gateway
 
 from stockshift_worker.entrypoints import cli
 from stockshift_worker.jobs import gateway, runner
+
+
+def test_runtime_identity_logs_only_uid_and_fixed_source_hashes(monkeypatch, capsys):
+    monkeypatch.setattr(cli.os, "getuid", lambda: 10001, raising=False)
+    monkeypatch.setenv("STOCKSHIFT_SUPABASE_SECRET_KEY", "never-log-this-credential")
+    monkeypatch.setenv("STOCKSHIFT_OCR_TOKEN", "never-log-this-token")
+    cli.log_runtime_identity()
+    output = capsys.readouterr().out
+    value = json.loads(output)
+    assert set(value) == {"uid", "source_sha256"}
+    assert value["uid"] == 10001
+    assert value["source_sha256"] == {
+        name: hashlib.sha256(cli.Path(runner.__file__).with_name(name).read_bytes()).hexdigest()
+        for name in ("gateway.py", "capabilities.py", "runner.py")
+    }
+    assert "never-log-this" not in output
 
 
 def jwt(role):
