@@ -73,6 +73,7 @@ test("foreign products, wrong prices and live mismatch cannot be purchased", () 
     { livemode: true },
     { active: false },
     { product: "prod_foreign" },
+    { product: { id: "prod_deleted", object: "product", deleted: true } },
     { product: { metadata: { app: "other", plan: "csv-launch" } } },
   ])
     assert.throws(() =>

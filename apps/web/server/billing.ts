@@ -88,6 +88,7 @@ export function validatePrice(
     price.unit_amount !== 2900 ||
     typeof product === "string" ||
     product.deleted ||
+    !("metadata" in product) ||
     product.metadata.app !== "stockshift" ||
     product.metadata.plan !== "csv-launch"
   )
